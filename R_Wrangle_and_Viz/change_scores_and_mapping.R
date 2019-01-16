@@ -1,5 +1,6 @@
 # Reshape, calculate change score and centroid, and map the data
-# Jan 15 2019
+# Benedito Chou
+# Jan 16 2019
 
 # --- Project Requirements --------------------------------
 
@@ -22,7 +23,7 @@
 # Finally, a third map would be a hybrid of the first two, using the merged/combined at Time1, so that you could have one arc coming from the center point of the merged/combined counties and have it then go to all the individual counties at Time2.
 # I always prefer R so that I can run the code myself, but Tableau might work too. Which do you think would be better?
 
-# Changes
+# Change
 # Turn on county shape layer on the map?
 # Show node label (tribe name) with hover over tool tip? If this will take much time, I don't need it.
 
@@ -101,7 +102,7 @@ amenity_dedup <- distinct(amenity_0)
 # Import shape files
 # Use this if shape files it its own subfolder cb_2017_us_county_20m
 # shape <- readOGR('cb_2017_us_county_20m', "cb_2017_us_county_20m")
-shape <- readOGR('x_County_Shapefiles/cb_2017_us_county_20m.shp')
+shape <- readOGR('cb_2017_us_county_20m.shp')
 
 # Quick plot to check shapefile
 plot(shape)
@@ -532,7 +533,27 @@ map_tribe <- function(df, tribe_lst = NA, mid_t2 = FALSE, circle_size = c(3,5), 
     return(my_map)
 } 
 
-# Call wrapper fn to make maps
+# --- Example Usage ---------------------------------------
+
+# Call wrapper fn map_tribe to make maps
+
+# Map 1 
+# Map one tribe, map one tribe and use all-point for time 1 and 2
+# Use merged_data_record_all_long as data.frame
+map_tribe(merged_data_record_all_long, c("Umpqua"))
+
+# Map 2
+# Map one tribe, map one tribe and use mid-point for time 1 and time 2
+# Use merged_data_tr1_r2_long as data.frame
+map_tribe(merged_data_tr1_r2_long, c("Umpqua"), mid_t2 = TRUE)
+
+# Map 3
+# Map one tribe, map one tribe and use mid-point for time 1 and all-point for time 2
+# Use merged_data_tr1_r2_long as data.frame
+map_tribe(merged_data_tr1_r2_long, c("Umpqua"))
+
+
+# Other Example
 
 # Map one tribe
 map_tribe(merged_data_tr1_r2_long, c("Absentee-Shawnee"))
