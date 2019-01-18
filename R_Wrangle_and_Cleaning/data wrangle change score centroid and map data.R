@@ -33,18 +33,19 @@
 # Load library
 # Install these packages if neccessary
 library(readr)
-library(tidyr)
+library(tidyverse)
 library(dplyr)
 library(stringr)
 library(scales)
 library(rgdal)
+library(sp)
 library(geosphere)
 library(leaflet)
 library(leaflet.extras)
 
-
 # Set working directory - change to your project directory
-setwd("~/Documents/neater/Upwork Data Merge and Change Score")
+# setwd("~/")
+
 
 # --- Import Data ---------------------------------------
 
@@ -102,7 +103,7 @@ amenity_dedup <- distinct(amenity_0)
 # Import shape files
 # Use this if shape files it its own subfolder cb_2017_us_county_20m
 # shape <- readOGR('cb_2017_us_county_20m', "cb_2017_us_county_20m")
-shape <- readOGR('cb_2017_us_county_20m.shp')
+shape <- readOGR('x_County_Shapefiles/cb_2017_us_county_20m.shp')
 
 # Quick plot to check shapefile
 plot(shape)
@@ -135,7 +136,7 @@ shape_df <- mutate(shape_df, FIPS = paste0(STATEFP, COUNTYFP))
 
 # Check
 anti_join(shape_df, amenity_dedup, by = "FIPS") %>% View()
-anti_join(amenity_deup, shape_df, by = "FIPS") %>% View()
+anti_join(amenity_dedup, shape_df, by = "FIPS") %>% View()
 
 # Append leading 0 back to FIPS
 amenity_dedup <- mutate(amenity_dedup,
@@ -598,6 +599,5 @@ map_tribe(merged_data_record_all_long, sample(tribes_time1and2_lst$tribe, 5))
 
 # 10 tribe seems to be the maximum to plot before it crashes or run really slow
 map_tribe(merged_data_record_all_long, sample(tribes_time1and2_lst$tribe, 10))
-
 
 # --- Code Fragment ---------------------------------------
