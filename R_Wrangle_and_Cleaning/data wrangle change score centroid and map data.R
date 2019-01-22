@@ -1,32 +1,3 @@
-# Reshape, calculate change score and centroid, and map the data
-# Benedito Chou
-# Jan 16 2019
-
-# --- Project Requirements --------------------------------
-
-# Original Requirements
-# [Step 1.] A basic reshape and merge of the two datasets so that change scores can be calculated.
-
-# [Step 2.] PAIRWISE CHANGE SCORE BETWEEN TWO VARIABLES: The data from Step 1 includes a Time1 variable and a Time2 variable. I need two basic tasks completed: (1) For every row, I need you to calculate the raw change score between Time1 and Time2 variables. i.e. Time1 - Time2 = Change Score. (2) A single ID will have multiple instances of Time1 and Time2, so create another basic variable that calculates the aggregated average change score for that ID.
-
-# [Step 3.] AVERAGE CHANGE SCORE BETWEEN TWO VARIABLES: Using the same data from Step 1, compute a total average for each ID at Time1 and a total average at Time2 (remember each ID has multiple rows and multiple Time1 and Time2 observations). Compute the difference between the averages at Time1 and Time2. e.g. Average_Time_1 - Average_Time_2 = Average_Change_Score
-
-# Latest Requirements
-# I'm interested in the migration distance between a tribes location at Time1 and where they end up at Time2. This can be calculated using the centroid lat/long for each county, and calculating distance (miles or kilometers) between these FIPS centroids at Time1 and Time2.
-
-# I'd like this to be calculated in two ways: (1) In the same pairwise fashion calculating the distance between every record in the data. (2) In addition to that, I'm wondering if you would be able to do something similar to the aggregate average you calculated for those scores at the tribe level. Spatially merge the all the counties for a tribe, and find the center lat/long centroid of that as well. For example, if a tribe is in 5 counties at Time1, can you find the geographic centroid of those five counties as if they were one big county? I know there would be some error because tribes may not always be in adjacent counties, but they were fairly itinerant, so there is room for error.
-
-# 2. Create a destination/migration map that visualizes the movement of tribes at Time1 from Time2...both the pairwise version and the merged/combined version. I'm envisioning something like this: https://www.eksh.com/resources/tech-tips/2016/november/tableau-tip-curved-flight-paths-on-a-tableau-map#close and this https://onlinehelp.tableau.com/current/pro/desktop/en-us/Img/maps_build9.png <-this one is nice because I could also include the size of the Time1 origin node and the Time2 destination node based on the n_unique_FIPS variables in the tribes_level_csv.
-
-# The merged/combined version would obviously only have many arcs from all possible migrations between counties.
-# But the merged/combined county version would only have one arc line per tribe because all counties at Time1 and Time 2 have been combined
-# Finally, a third map would be a hybrid of the first two, using the merged/combined at Time1, so that you could have one arc coming from the center point of the merged/combined counties and have it then go to all the individual counties at Time2.
-# I always prefer R so that I can run the code myself, but Tableau might work too. Which do you think would be better?
-
-# Change
-# Turn on county shape layer on the map?
-# Show node label (tribe name) with hover over tool tip? If this will take much time, I don't need it.
-
 
 # --- Project Prep ----------------------------------------
 
@@ -310,8 +281,8 @@ merged_data_tribe <- merged_data_tribe %>%
 
 # --- Export Data -----------------------------------------
 
-write_csv(merged_data_record, "natural_amenity_with_change_scores_centroid_dist_records_level.csv")
-write_csv(merged_data_tribe, "natural_amenity_with_change_scores_centriod_dist_tribes_level.csv")
+write_csv(merged_data_record, "amenity_records_level.csv")
+write_csv(merged_data_tribe, "amenity_tribes_level.csv")
 
 
 # --- Map Data --------------------------------------------

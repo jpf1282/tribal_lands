@@ -1,0 +1,8 @@
+indianbargain.pdf (application/pdf) 246926 bytes.
+justdocsACUT.zip (application/zip) 279044 bytes.
+justdocsRCUT.zip (application/zip) 304554 bytes.
+justdocsUCUT.zip (application/zip) 163296 bytes.
+justdocsVCUT.zip (application/zip) 1079402 bytes.
+Note.txt (text/plain; charset=US-ASCII) 528 bytes.
+IndianWars.csv (text/plain; charset=US-ASCII) 4429 bytes.
+UniverseCases.csv (text/plain; charset=US-ASCII) 89365 bytes.

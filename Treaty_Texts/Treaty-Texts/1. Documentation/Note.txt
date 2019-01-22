@@ -1,0 +1,7 @@
+Data and Code
+
+Data and code (R) <http://www.r-project.org/> for my papers will appear here in due course. 
+
+The treaties (and manifests) for US Treaty-making with American Indians (AJPS), may be found here. Note that they are divided into 4 groups as per the paper describes. That is, Valid and Operable (VCUT), ratified agreements (ACUT), rejected (RCUT), unratified (UCUT). A description of this data is found in UniverseCases.csv 
+
+The relevant data for the Indian Wars (as per Section 5.1) is found in IndianWars.csv 
