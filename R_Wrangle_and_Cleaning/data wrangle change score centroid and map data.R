@@ -512,7 +512,9 @@ map_tribe <- function(df, tribe_lst = NA, mid_t2 = FALSE, circle_size = c(3,5), 
 # Map 1 
 # Map one tribe, map one tribe and use all-point for time 1 and 2
 # Use merged_data_record_all_long as data.frame
-map_tribe(merged_data_record_all_long, c("Umpqua"))
+map_tribe(merged_data_record_all_long, c("Arapaho"))
+#all of the tribes (might crash?)
+map_tribe(merged_data_record_all_long)
 
 # Map 2
 # Map one tribe, map one tribe and use mid-point for time 1 and time 2
@@ -522,7 +524,7 @@ map_tribe(merged_data_tr1_r2_long, c("Umpqua"), mid_t2 = TRUE)
 # Map 3
 # Map one tribe, map one tribe and use mid-point for time 1 and all-point for time 2
 # Use merged_data_tr1_r2_long as data.frame
-map_tribe(merged_data_tr1_r2_long, c("Umpqua"))
+map_tribe(merged_data_tr1_r2_long, c("Arapaho"))
 
 
 # Other Example
