@@ -1,0 +1,249 @@
+---
+title: "Explore Difference in Amenity Rank Scores"
+output: html_document
+---
+
+# The data created for this analysis is in the `data wrangle change score centroid and map data.R` file in the main `R_Analysis` folder
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Setup Library
+Install these packages if neccessary.
+```{r project_setup, message = FALSE}
+
+library(readr)
+library(tidyr)
+library(knitr)
+library(DT)
+library(dplyr)
+library(stringr)
+library(scales)
+library(broom)
+library(ggplot2)
+library(ggbeeswarm)
+
+```
+
+## Data Preparation
+
+### Load Data
+Load the data imported, processed and saved from "data wrangle change score centroid and map data.R".
+```{r}
+
+load("/Users/jf/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/processed_data.RData")
+
+```
+
+### Prepare Data
+
+Keep distinct records within each time point only because keeping all pairwise records will inflate the number of observations in time 1 and 2.
+```{r}
+
+data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE)
+
+```
+
+Create data.frame to include only tribes with time 1 and 2 data.
+```{r}
+
+data_t1and2_long <- filter(data_long, tribe %in% tribes_time1and2_lst$tribe)
+
+```
+
+**Check Data**
+First, confirm the data is correct, each tribe should have 2 summarized records in total, one for time 1 and one for time 2, so the resulted data.frame should has 0 row.
+```{r}
+t1and2_lst <- group_by(data_t1and2_long, tribe, time) %>% 
+  count() %>%
+  ungroup() %>%
+  group_by(tribe) %>%
+  count() %>%
+  filter(nn < 2)
+
+nrow(t1and2_lst)
+```
+
+
+## Exploratory Analyses
+
+### Plot Amenity Rank Scores by Time
+### All Tribes, including those with time 1 or time 2 data only
+
+* The distribution of amentiy rank scores in time 1 is skewed to the right.
+* The distirbution of amenity rank scores are in general higher in time 2 compared to time 1.
+
+```{r, message = FALSE, warning = FALSE}
+
+ggplot(data_long, aes(amen_rank, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge", binwidth = 1) +
+  theme_minimal()
+
+ggplot(data_long, aes(time, amen_rank, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+### Tribes with both time 1 or time 2 data
+
+* The distribution of amentiy rank scores in time 1 is skewed to the right.
+* The distirbution of amenity rank scores are in general higher in time 2 compared to time 1.
+
+```{r, message = FALSE, warning = FALSE}
+
+ggplot(data_t1and2_long, aes(amen_rank, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge", binwidth = 1) +
+  theme_minimal()
+
+ggplot(data_t1and2_long, aes(time, amen_rank, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+## Test for Significant Difference
+
+### (1) Test for significant difference at the aggregate level
+
+* Wilcoxon Rank Sum Test (wilcox.test, paired = FALSE) is a non-parameteric test for two-sample comparisions.
+* Use Wilcoxon Rank Sum Test over t-test because the outcome amenity rank scores is a rank ordered number and is not normally distributed.
+* Wilcoxon Signed Rank Test for dependent sample is not used because these are not true paired data, since we don't know which time 1 locations migrate to which time 2 locations and simply assume all possible migration routes happened.
+
+### Use all records
+
+```{r}
+
+wilcox.test(amen_rank ~ time, data = data_long, paired = FALSE)
+
+```
+
+```{r}
+
+median_rank_t1 <- median(filter(data_long, time == "time 1")$amen_rank, na.rm = T)
+median_rank_t2 <- median(filter(data_long, time == "time 2")$amen_rank, na.rm = T)
+pvalue <- round(tidy(wilcox.test(amen_rank ~ time, data = data_long, paired = FALSE))$p.value, 3)
+
+```
+
+**Interpretation**
+
+* At the aggregate level, the median rank difference between time 1 (median rank = `r median_rank_t1`) and time 2 (median rank = `r median_rank_t2`) distribution of amenity scores was statistically signficant (`r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
+
+### Use only records where tribes have time 1 and 2 data
+
+```{r}
+wilcox.test(amen_rank ~ time, data = data_t1and2_long, paired = FALSE)
+```
+
+```{r}
+
+median_rank_t1 <- median(filter(data_t1and2_long, time == "time 1")$amen_rank, na.rm = T)
+median_rank_t2 <- median(filter(data_t1and2_long, time == "time 2")$amen_rank, na.rm = T)
+pvalue <- round(tidy(wilcox.test(amen_rank ~ time, data = data_t1and2_long, paired = FALSE))$p.value, 3)
+
+```
+
+**Interpretation**
+
+* At the aggregate level for tribes with migration, the median rank difference between time 1 (median rank = `r median_rank_t1`) and time 2 (median rank = `r median_rank_t2`) distribution of amenity scores was statistically signficant (`r ifelse(pvalue < .001, "p < .001",  paste0("p = ", pvalue))`).
+
+
+### (2) Test for significant difference at tribe level
+
+```{r, message = FALSE, warning = FALSE}
+no_test <- group_by(data_t1and2_long, tribe) %>%
+  do(try(tidy(wilcox.test(amen_rank ~ time, data =., paired = FALSE)))) %>%
+   filter(!is.na(p.value)) %>% nrow()
+```
+
+This can only be tested with the `r nrow(tribes_time1and2_lst)` tribes where migrations occured. Furthermore, only tribes where the amenities scores have changed between time points can their differences be tested for statistical significance. This reduce the number of tribes from `r nrow(tribes_time1and2_lst)` to `r no_test`.
+
+### Run Wilcoxon Rank Sum Test in Batch
+
+* Run Wilcoxon Rank Sum Test in batch using group_by and do at the tribe level.
+* Include a try call to catch error.
+* Use tidy from broom package to format the results into a data.frame.
+
+```{r, message = FALSE, warning = FALSE}
+
+model <- group_by(data_t1and2_long, tribe) %>%
+  do(try(tidy(wilcox.test(amen_rank ~ time, data =., paired = FALSE))))
+
+```
+
+Calculate number of test based only on tribes where there is non-zero difference in rank scores between time 1 and 2.
+
+```{r}
+
+no_test <- nrow(filter(model, !is.na(p.value)))
+
+```
+
+* Create sig column to flag statistical significance results. 
+* p-value cutoff is adjusted to control for Type I error due to multiple comparisons using Bonferroni correction (p value threshold = .05 / number of tests or `r no_test`), adjusted p-value threshold = `r .5/no_test`.  
+
+```{r, message = FALSE, warning = FALSE}
+
+model <- model %>%
+  mutate(sig = ifelse(p.value < .05 / no_test, "yes", "no"))
+
+```
+
+* Add average rank, distance, and no of unique FIPS to help with interpretation
+* Rename some variables for prettier column headers
+
+```{r}
+
+results_df <- inner_join(model, merged_data_tribe, by = "tribe") %>%
+  mutate(`Avg Diff Rank` = avg_amen_rank_t1 - avg_amen_rank_t2) %>%
+  select(tribe, sig, p.value, `Avg Diff Rank`, avg_amen_rank_t1, avg_amen_rank_t2, n_unique_FIPS_t1, n_unique_FIPS_t2, mid_dist) %>%
+  arrange(p.value) %>%
+  rename(
+    `Avg Rank T1` = avg_amen_rank_t1,
+    `Avg Rank T2` = avg_amen_rank_t2,
+    `Unique FIPS T1` = n_unique_FIPS_t1,
+    `Unique FIPS T2` = n_unique_FIPS_t2,
+    `Mid Distance` = mid_dist)
+
+```
+
+
+### Results Table 
+#### Ordered by p value in ascending order
+
+```{r}
+
+datatable(results_df,
+          filter = "top",
+          options = list(pageLength = 20)) %>%
+   formatRound(columns = c('p.value'), digits = 3) %>%
+   formatRound(columns = c('Avg Diff Rank', 'Avg Rank T1', 'Avg Rank T2', 'Mid Distance'), digits = 2)
+
+```
+
+```{r}
+
+sig_tribe_lst <- filter(results_df, p.value < .05) %>%
+  select(tribe)
+
+```
+
+**Interpretation**
+
+* None of the comparisons at the tribe levels achieve statistical significance when the Bonferroni correction is used.
+* The tests has low statistical power to detect differences given the number of observations at time 2 is much smaller than time 1.
+* If Bonferroni correction is not used, the median amenity rank scores was significantly differ between time 1 and 2 for seven tribes :(`r sig_tribe_lst$tribe`).
+* Results with NA p values are from tribes where they have the same amenity rank scores between time 1 and 2 and as such no statistical tests can be peformed.
+
+**Overall Interpretation**
+
+* Overall, there is a statistically significant difference at the aggregate level but only weak evidence at the tribe level when correction for multiple comparisons is not made. The lack of significant differences at the tribe level could be attributed to the low statistical power arises from the small number of observations at time 2.
