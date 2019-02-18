@@ -3,7 +3,9 @@ title: "Explore Difference in Amenity Rank Scores"
 output: html_document
 ---
 
-# The data created for this analysis is in the `data wrangle change score centroid and map data.R` file in the main `R_Analysis` folder
+
+<!-- # The data created for this analysis is in the `data wrangle change score centroid and map data.R` file in the main `R_Analysis` folder -->
+<!-- To output to HTML, use the Knit function above in the Rstudio menu beneath the tabs -->
 
 ```{r setup, include = FALSE}
 
@@ -26,6 +28,11 @@ library(broom)
 library(ggplot2)
 library(ggbeeswarm)
 
+```
+
+# Set WD
+```{r}
+setwd("/Users/jf/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Amenities_Analysis/")
 ```
 
 ## Data Preparation
