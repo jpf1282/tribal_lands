@@ -24,6 +24,7 @@ setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/triba
 # Use explicit col_types - update as needed
 tribes_0 <- read_csv("tribes.csv", col_types = "ccccc")
 amenity_0 <- read_csv("natural_amenity.csv", col_types = "ci")
+oilgas_0 <- read_csv("_Variables/Oil_Gas_Minerals/oilgascounty_avg.csv", col_types = "cccciiiiii")
 
 # --- Check Data ------------------------------------------
 
@@ -32,6 +33,8 @@ amenity_0 <- read_csv("natural_amenity.csv", col_types = "ci")
 tribes_fips <- distinct(tribes_0, FIPS) %>%
   mutate(nchar = nchar(FIPS))
 amenity_fips <- distinct(amenity_0, FIPS) %>%
+  mutate(nchar = nchar(FIPS))
+oilgas_fips <- distinct(oilgas_0, FIPS) %>%
   mutate(nchar = nchar(FIPS))
 
 # Join to find out what is unmatched
