@@ -1,22 +1,22 @@
+# Reshape, calculate change score and centroid, and map the data
 
 # --- Project Prep ----------------------------------------
 
 # Load library
 # Install these packages if neccessary
 library(readr)
-library(tidyverse)
+library(tidyr)
 library(dplyr)
 library(stringr)
 library(scales)
 library(rgdal)
-library(sp)
 library(geosphere)
 library(leaflet)
 library(leaflet.extras)
 
-# Set working directory - change to your project directory
-# setwd("~/")
 
+# Set working directory - change to your project directory
+setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis")
 
 # --- Import Data ---------------------------------------
 
@@ -281,8 +281,8 @@ merged_data_tribe <- merged_data_tribe %>%
 
 # --- Export Data -----------------------------------------
 
-write_csv(merged_data_record, "amenity_records_level.csv")
-write_csv(merged_data_tribe, "amenity_tribes_level.csv")
+write_csv(merged_data_record, "natural_amenity_with_change_scores_centroid_dist_records_level.csv")
+write_csv(merged_data_tribe, "natural_amenity_with_change_scores_centriod_dist_tribes_level.csv")
 
 
 # --- Map Data --------------------------------------------
@@ -424,6 +424,10 @@ merged_data_tr1_r2_long <- bind_rows(merged_data_tr1, merged_data_r2) %>%
   mutate(time = ifelse(!is.na(time), "time 2", "time 1"),
          n_unique_FIPS = ifelse(time == "time 1", n_unique_FIPS_t1, n_unique_FIPS_t2))
 
+# --- Save Data for further analsyes ----------------------
+
+# Save R data for further analyses
+save.image("processed_data.RData")
 
 # --- Map Data --------------------------------------------
 
@@ -512,9 +516,7 @@ map_tribe <- function(df, tribe_lst = NA, mid_t2 = FALSE, circle_size = c(3,5), 
 # Map 1 
 # Map one tribe, map one tribe and use all-point for time 1 and 2
 # Use merged_data_record_all_long as data.frame
-map_tribe(merged_data_record_all_long, c("Arapaho"))
-#all of the tribes (might crash?)
-map_tribe(merged_data_record_all_long)
+map_tribe(merged_data_record_all_long, c("Umpqua"))
 
 # Map 2
 # Map one tribe, map one tribe and use mid-point for time 1 and time 2
@@ -524,7 +526,7 @@ map_tribe(merged_data_tr1_r2_long, c("Umpqua"), mid_t2 = TRUE)
 # Map 3
 # Map one tribe, map one tribe and use mid-point for time 1 and all-point for time 2
 # Use merged_data_tr1_r2_long as data.frame
-map_tribe(merged_data_tr1_r2_long, c("Arapaho"))
+map_tribe(merged_data_tr1_r2_long, c("Umpqua"))
 
 
 # Other Example
@@ -572,5 +574,6 @@ map_tribe(merged_data_record_all_long, sample(tribes_time1and2_lst$tribe, 5))
 
 # 10 tribe seems to be the maximum to plot before it crashes or run really slow
 map_tribe(merged_data_record_all_long, sample(tribes_time1and2_lst$tribe, 10))
+
 
 # --- Code Fragment ---------------------------------------
