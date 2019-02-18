@@ -16,7 +16,7 @@ library(leaflet.extras)
 
 
 # Set working directory - change to your project directory
-setwd("/Users/jf/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/")
+setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis")
 
 # --- Import Data ---------------------------------------
 
