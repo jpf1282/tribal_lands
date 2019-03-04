@@ -18,12 +18,18 @@ library(leaflet.extras)
 # Set working directory - change to your project directory
 setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis")
 
+# Load data
+load("processed_data.RData")
+
 # --- Import Data ---------------------------------------
 
 # Import data using readr package
 # Use explicit col_types - update as needed
-tribes_0 <- read_csv("tribes.csv", col_types = "ccccc")
-amenity_0 <- read_csv("natural_amenity.csv", col_types = "ci")
+tribes_0 <- read_csv("_Variables/tribes.csv", col_types = "ccccc")
+amenity_0 <- read_csv("_Variables/natural_amenity.csv", col_types = "ci")
+oil_gas_0 <- read_csv("_Variables/oilgascounty_avg.csv", col_types = "cccciiiiii")
+rain_0 <- read_csv("_Variables/Precipitation_Justin.csv", col_types = "cn")
+epa_0 <- read_csv("_Variables/EPA_CSRI_Index_Final.csv", col_types = "cccccnnnnnn")
 
 # --- Check Data ------------------------------------------
 
@@ -33,14 +39,47 @@ tribes_fips <- distinct(tribes_0, FIPS) %>%
   mutate(nchar = nchar(FIPS))
 amenity_fips <- distinct(amenity_0, FIPS) %>%
   mutate(nchar = nchar(FIPS))
+oil_gas_fips <- distinct(oil_gas_0, FIPS) %>%
+  mutate(nchar = nchar(FIPS))
+rain_fips <- distinct(rain_0, FIPS) %>%
+  mutate(nchar = nchar(FIPS))
+epa_fips <- distinct(epa_0, FIPS) %>%
+  mutate(nchar = nchar(FIPS))
 
 # Join to find out what is unmatched
 # in tribes but not amenity
 anti_join(tribes_fips, amenity_fips) %>% 
   View()
 
+# in tribes but not oil and gas
+anti_join(tribes_fips, oil_gas_fips) %>% 
+  View()
+
+# in tribes but not rain
+anti_join(tribes_fips, rain_fips) %>% 
+  View()
+
+# in tribes but not epa
+anti_join(tribes_fips, epa_fips) %>% 
+  View()
+
+# Don't need to check amenity against oil and gas or rain here
+# since they are different dataset
+
 # in amenity but not tribes
 anti_join(amenity_fips, tribes_fips) %>%
+  View()
+
+# in oil and gas but not trbies
+anti_join(oil_gas_fips, tribes_fips) %>% 
+  View()
+
+# in rain but not tribes
+anti_join(rain_fips, tribes_fips) %>% 
+  View()
+
+# in epa but not tribes
+anti_join(epa_fips, tribes_fips) %>% 
   View()
 
 # Subset tribes data to time 1 and time 2
@@ -66,6 +105,12 @@ group_by(tribes_post, tribe, time, FIPS, fips.name, state_from_fips) %>%
 # Keep distinct FIPS
 tribes_dedup <- distinct(tribes_0)
 amenity_dedup <- distinct(amenity_0)
+oil_gas_dedup <- distinct(oil_gas_0)
+rain_dedup <- distinct(rain_0)
+epa_dedup <- distinct(epa_0)
+
+# Keep only FIPS and metric for EPA file
+epa_dedup <- select(epa_dedup, FIPS, Risk, Governance, `Built Environment`, `Natural Environment`, Society, CRSI)
 
 # Download census county shapefile from US census website
 # Put this into your project folder
@@ -103,11 +148,18 @@ shape_df <- shape@data
 # Create FIPS from state and county code
 shape_df <- mutate(shape_df, FIPS = paste0(STATEFP, COUNTYFP))
 
-# Merge with amenity score file
+
+# Merge with amenity score and oil and gas file
 
 # Check
 anti_join(shape_df, amenity_dedup, by = "FIPS") %>% View()
 anti_join(amenity_dedup, shape_df, by = "FIPS") %>% View()
+anti_join(shape_df, oil_gas_dedup, by = "FIPS") %>% View()
+anti_join(oil_gas_dedup, shape_df, by = "FIPS") %>% View()
+anti_join(shape_df, rain_dedup, by = "FIPS") %>% View()
+anti_join(rain_dedup, shape_df, by = "FIPS") %>% View()
+anti_join(shape_df, epa_dedup, by = "FIPS") %>% View()
+anti_join(epa_dedup, shape_df, by = "FIPS") %>% View()
 
 # Append leading 0 back to FIPS
 amenity_dedup <- mutate(amenity_dedup,
@@ -116,17 +168,44 @@ amenity_dedup <- mutate(amenity_dedup,
 tribes_dedup <- mutate(tribes_dedup,
   FIPS_r = str_pad(FIPS, 5, pad = "0", side = "left"))
 
+oil_gas_dedup <- mutate(oil_gas_dedup,
+  FIPS_r = str_pad(FIPS, 5, pad = "0", side = "left"))
+
+rain_dedup <- mutate(rain_dedup,
+  FIPS_r = str_pad(FIPS, 5, pad = "0", side = "left"))
+
+epa_dedup <- mutate(epa_dedup,
+  FIPS_r = str_pad(FIPS, 5, pad = "0", side = "left"))
+
 # Check
 anti_join(shape_df, amenity_dedup, by = c("FIPS" = "FIPS_r")) %>% View()
 anti_join(amenity_dedup, shape_df, by = c("FIPS_r" = "FIPS")) %>% View()
+anti_join(shape_df, oil_gas_dedup, by = c("FIPS" = "FIPS_r")) %>% View()
+anti_join(oil_gas_dedup, shape_df, by = c("FIPS_r" = "FIPS")) %>% View()
+anti_join(shape_df, rain_dedup, by = c("FIPS" = "FIPS_r")) %>% View()
+anti_join(rain_dedup, shape_df, by = c("FIPS_r" = "FIPS")) %>% View()
+anti_join(shape_df, epa_dedup, by = c("FIPS" = "FIPS_r")) %>% View()
+anti_join(epa_dedup, shape_df, by = c("FIPS_r" = "FIPS")) %>% View()
+anti_join(amenity_dedup, oil_gas_dedup, by = c("FIPS_r" = "FIPS_r")) %>% View()
+anti_join(oil_gas_dedup, amenity_dedup, by = c("FIPS_r" = "FIPS_r")) %>% View()
+anti_join(amenity_dedup, rain_dedup, by = c("FIPS_r" = "FIPS_r")) %>% View()
+anti_join(oil_gas_dedup, rain_dedup, by = c("FIPS_r" = "FIPS_r")) %>% View()
+anti_join(amenity_dedup, epa_dedup, by = c("FIPS_r" = "FIPS_r")) %>% View()
+anti_join(oil_gas_dedup, epa_dedup, by = c("FIPS_r" = "FIPS_r")) %>% View()
+anti_join(rain_dedup, epa_dedup, by = c("FIPS_r" = "FIPS_r")) %>% View()
 
-# Merge amenity scores with shapefile that has the centroid 
+# Merge all the auxiliary data first, before merging with shape file and tribe data
+extra_dedup <- full_join(amenity_dedup, oil_gas_dedup, by = c("FIPS_r", "FIPS")) %>%
+  full_join(rain_dedup, by = c("FIPS_r", "FIPS")) %>%
+  full_join(epa_dedup, by = c("FIPS_r", "FIPS"))
+
+# Merge extra auxiliary data with shapefile that has the centroid 
 # using FIPS_r with the leading 0
-amenity_dedup <- left_join(amenity_dedup, shape_df, by = c("FIPS_r" = "FIPS"))
+extra_dedup <- left_join(extra_dedup, shape_df, by = c("FIPS_r" = "FIPS"))
 
 # Remove the non leading 0 FIPS
 # Make the leading 0 as the FIPS
-amenity_dedup <- rename(amenity_dedup,
+extra_dedup <- rename(extra_dedup,
   FIPS_original = FIPS,
   FIPS = FIPS_r) %>%
   select(-FIPS_original)
@@ -144,9 +223,9 @@ tribes_dedup <- rename(tribes_dedup,
 tribes_pre <- filter(tribes_dedup, time == "time1")
 tribes_post <- filter(tribes_dedup, time == "time2")
 
-# Merge amenity rank scores with pre and post tribes data by FIPS
-tribes_pre <- left_join(tribes_pre, amenity_dedup, by = "FIPS")
-tribes_post <- left_join(tribes_post, amenity_dedup, by = "FIPS")
+# Merge extra auxiliary data with pre and post tribes data by FIPS
+tribes_pre <- left_join(tribes_pre, extra_dedup, by = "FIPS")
+tribes_post <- left_join(tribes_post, extra_dedup, by = "FIPS")
 
 # Combine pre and post data side by side by tribe names
 # Use full join to keep all tribes, including those with only time 1 or 2 data
@@ -161,24 +240,83 @@ merged_data <- mutate(merged_data,
 # Calculate average tribe amenity rank scores
 merged_data <- group_by(merged_data, tribe) %>%
   mutate(avg_amen_rank_t1 = mean(amen_rank_t1, na.rm = TRUE),
-         avg_amen_rank_t2 = mean(amen_rank_t2, na.rm = TRUE))
+         avg_amen_rank_t2 = mean(amen_rank_t2, na.rm = TRUE),
+         avg_oil_avg_t1 = mean(oil_avg_t1, na.rm = TRUE),
+         avg_oil_avg_t2 = mean(oil_avg_t2, na.rm = TRUE),
+         avg_gas_avg_t1 = mean(gas_avg_t1, na.rm = TRUE),
+         avg_gas_avg_t2 = mean(gas_avg_t2, na.rm = TRUE),
+         avg_precip_t1 = mean(precip_t1, na.rm = TRUE),
+         avg_precip_t2 = mean(precip_t2, na.rm = TRUE),
+         avg_risk_t1 = mean(Risk_t1, na.rm = TRUE),
+         avg_risk_t2 = mean(Risk_t2, na.rm = TRUE),
+         avg_governance_t1 = mean(Governance_t1, na.rm = TRUE),
+         avg_governance_t2 = mean(Governance_t2, na.rm = TRUE),
+         avg_built_env_t1 = mean(`Built Environment_t1`, na.rm = TRUE),
+         avg_built_env_t2 = mean(`Built Environment_t2`, na.rm = TRUE),
+         avg_natural_env_t1 = mean(`Natural Environment_t1`, na.rm = TRUE),
+         avg_natural_env_t2 = mean(`Natural Environment_t2`, na.rm = TRUE),
+         avg_society_t1 = mean(Society_t1, na.rm = TRUE),
+         avg_society_t2 = mean(Society_t2, na.rm = TRUE),
+         avg_crsi_t1 = mean(CRSI_t1, na.rm = TRUE),
+         avg_crsi_t2 = mean(CRSI_t2, na.rm = TRUE)
+         )
 
 # --- Calculate Change Scores -----------------------------
 
-# Calculate record (row) level change scores
+# Calculate record (row) level change scores, T2 - T1
 merged_data <- mutate(merged_data,
-  amenity_change_score = amen_rank_t1 - amen_rank_t2)
+  amenity_change_score = amen_rank_t2 - amen_rank_t1,
+  oil_change_score = oil_avg_t2 - oil_avg_t1,
+  gas_change_score = gas_avg_t2 - gas_avg_t1,
+  precip_change_score = precip_t2 - precip_t1,
+  risk_change_score = Risk_t2 - Risk_t1,
+  governance_change_score = Governance_t2 - Governance_t1,
+  built_env_change_score = `Built Environment_t2` - `Built Environment_t1`,
+  natural_env_change_score = `Natural Environment_t2` - `Natural Environment_t1`,
+  society_change_score = Society_t2 - Society_t1,
+  crsi_change_score = CRSI_t2 - CRSI_t1)
 
-# Calculate tribe level change scores
+# Calculate tribe level change scores, T2 - T1
 merged_data <- mutate(merged_data,
-  avg_amenity_change_score = avg_amen_rank_t1 - avg_amen_rank_t2)
+  avg_amenity_change_score = avg_amen_rank_t2 - avg_amen_rank_t1,
+  avg_oil_change_score = avg_oil_avg_t2 - avg_oil_avg_t1,
+  avg_gas_change_score = avg_gas_avg_t2 - avg_gas_avg_t1,
+  avg_precip_change_score = avg_precip_t2 - avg_precip_t1,
+  avg_risk_change_score = avg_risk_t2 - avg_risk_t1,
+  avg_governance_change_score = avg_governance_t2 - avg_governance_t1,
+  avg_built_env_change_score = avg_built_env_t2 - avg_built_env_t1,
+  avg_natural_env_change_score = avg_natural_env_t2 - avg_natural_env_t1,
+  avg_society_change_score = avg_society_t2 - avg_society_t1,
+  avg_crsi_change_score = avg_crsi_t2 - avg_crsi_t1)
 
 # Rearrange column and row
 merged_data <- select(merged_data, tribe, time, 
   starts_with("FIPS_"), starts_with("fips.name"), starts_with("state_from_fips"),
   amen_rank_t1, amen_rank_t2, amenity_change_score,
   avg_amen_rank_t1, avg_amen_rank_t2, avg_amenity_change_score,
-  lat_t1, lon_t1, lat_t2, lon_t2
+  oil_avg_t1, oil_avg_t2, oil_change_score,
+  avg_oil_avg_t1, avg_oil_avg_t2, avg_oil_change_score,
+  gas_avg_t1, gas_avg_t2, gas_change_score,
+  avg_gas_avg_t1, avg_gas_avg_t2, avg_gas_change_score,
+  precip_t1, precip_t2, precip_change_score,
+  avg_precip_t1, avg_precip_t2, avg_precip_change_score,
+  Risk_t1, Risk_t2, risk_change_score,
+  avg_risk_t1, avg_risk_t2, avg_risk_change_score,
+  Governance_t1, Governance_t2, governance_change_score,
+  avg_governance_t1, avg_governance_t2, avg_governance_change_score,
+  `Built Environment_t1`, `Built Environment_t2`, built_env_change_score,
+  avg_built_env_t1, avg_built_env_t2, avg_built_env_change_score,
+  `Natural Environment_t1`, `Natural Environment_t2`, natural_env_change_score,
+  avg_natural_env_t1, avg_natural_env_t2, avg_natural_env_change_score,
+  Society_t1,  Society_t2, society_change_score,
+  avg_society_t1, avg_society_t2, avg_society_change_score,
+  CRSI_t1, CRSI_t2, crsi_change_score,
+  avg_crsi_t1, avg_crsi_t2, avg_crsi_change_score,
+  lat_t1, lon_t1, lat_t2, lon_t2,
+  Rural_Urban_Continuum_Code_2013_t1, Rural_Urban_Continuum_Code_2013_t2,
+  Urban_Influence_2013_t1, Urban_Influence_2013_t2,         
+  Metro_Nonmetro_2013_t1, Metro_Nonmetro_2013_t2, 
+  Metro_Micro_Noncore_2013_t1, Metro_Micro_Noncore_2013_t2
   ) %>%
   arrange(time)
 
@@ -230,6 +368,34 @@ merged_data_tribe <- group_by(merged_data, tribe, time) %>%
   summarize(
     avg_amen_rank_t1 = mean(amen_rank_t1, na.rm = TRUE),
     avg_amen_rank_t2 = mean(amen_rank_t2, na.rm = TRUE),
+    avg_oil_avg_t1 = mean(oil_avg_t1, na.rm = TRUE),
+    avg_oil_avg_t2 = mean(oil_avg_t2, na.rm = TRUE),
+    avg_gas_avg_t1 = mean(gas_avg_t1, na.rm = TRUE),
+    avg_gas_avg_t2 = mean(gas_avg_t2, na.rm = TRUE),
+    avg_precip_t1 = mean(precip_t1, na.rm = TRUE),
+    avg_precip_t2 = mean(precip_t2, na.rm = TRUE),
+    avg_risk_t1 = mean(Risk_t1, na.rm = TRUE),
+    avg_risk_t2 = mean(Risk_t2, na.rm = TRUE),
+    avg_governance_t1 = mean(Governance_t1, na.rm = TRUE),
+    avg_governance_t2 = mean(Governance_t2, na.rm = TRUE),
+    avg_built_env_t1 = mean(`Built Environment_t1`, na.rm = TRUE),
+    avg_built_env_t2 = mean(`Built Environment_t2`, na.rm = TRUE),
+    avg_natural_env_t1 = mean(`Natural Environment_t1`, na.rm = TRUE),
+    avg_natural_env_t2 = mean(`Natural Environment_t2`, na.rm = TRUE),
+    avg_society_t1 = mean(Society_t1, na.rm = TRUE),
+    avg_society_t2 = mean(Society_t2, na.rm = TRUE),
+    avg_crsi_t1 = mean(CRSI_t1, na.rm = TRUE),
+    avg_crsi_t2 = mean(CRSI_t2, na.rm = TRUE),
+    avg_amenity_change_score = mean(avg_amenity_change_score, na.rm = TRUE),
+    avg_oil_change_score = mean(avg_oil_change_score, na.rm = TRUE),
+    avg_gas_change_score = mean(avg_gas_change_score, na.rm = TRUE),
+    avg_precip_change_score = mean(avg_precip_change_score, na.rm = TRUE),
+    avg_risk_change_score = mean(avg_risk_change_score, na.rm = TRUE),
+    avg_governance_change_score = mean(avg_governance_change_score, na.rm = TRUE),
+    avg_built_env_change_score = mean(avg_built_env_change_score, na.rm = TRUE),
+    avg_natural_env_change_score = mean(avg_natural_env_change_score, na.rm = TRUE),
+    avg_society_change_score = mean(avg_society_change_score, na.rm = TRUE),
+    avg_crsi_change_score = mean(avg_crsi_change_score, na.rm = TRUE),
     avg_lat_t1 = mean(lat_t1, na.rm = TRUE),
     avg_lon_t1 = mean(lon_t1, na.rm = TRUE),
     avg_lat_t2 = mean(lat_t2, na.rm = TRUE),
@@ -245,9 +411,7 @@ merged_data_tribe <- group_by(merged_data, tribe, time) %>%
 
 # Create tribe level summary meta info data.frame
 merged_data_meta <- select(merged_data_tribe,
-    -avg_amen_rank_t1, -avg_amen_rank_t2,
-    -mid_lat_t1, -mid_lon_t1, 
-    -mid_lat_t2, -mid_lon_t2)
+  tribe, time, avg_lat_t1, avg_lon_t1, avg_lat_t2, avg_lon_t2, n_record, n_unique_FIPS_t1, n_unique_FIPS_t2)
 
 # Join meta information from summary to record level data
 merged_data_record <- left_join(merged_data, merged_data_meta, by = c("tribe", "time"), suffix = c("_r", "_tr")) 
@@ -281,8 +445,8 @@ merged_data_tribe <- merged_data_tribe %>%
 
 # --- Export Data -----------------------------------------
 
-write_csv(merged_data_record, "natural_amenity_with_change_scores_centroid_dist_records_level.csv")
-write_csv(merged_data_tribe, "natural_amenity_with_change_scores_centriod_dist_tribes_level.csv")
+write_csv(merged_data_record, "change_scores_centroid_dist_records_level.csv")
+write_csv(merged_data_tribe, "change_scores_centriod_dist_tribes_level.csv")
 
 
 # --- Map Data --------------------------------------------
@@ -332,11 +496,20 @@ leaflet() %>%
 merged_data_record_all <- mutate(merged_data_record, ID = row_number())
 
 # Reshape data from wide to long for mapping
-merged_data_record_all_t1 <- select(merged_data_record_all, ID, tribe, FIPS_t1, n_unique_FIPS_t1, amen_rank_t1, lon_t1, lat_t1, avg_lat_t1, avg_lon_t1, mid_lat_t1, mid_lon_t1) %>% 
+merged_data_record_all_t1 <- select(merged_data_record_all, ID, tribe, FIPS_t1, n_unique_FIPS_t1, amen_rank_t1, oil_avg_t1, gas_avg_t1, precip_t1, Risk_t1, Governance_t1, `Built Environment_t1`, `Natural Environment_t1`, Society_t1, CRSI_t1, lon_t1, lat_t1, avg_lat_t1, avg_lon_t1, mid_lat_t1, mid_lon_t1) %>% 
   mutate(time = "time 1") %>%
   rename(FIPS = FIPS_t1,
          n_unique_FIPS = n_unique_FIPS_t1,
          amen_rank = amen_rank_t1,
+         oil_avg = oil_avg_t1,
+         gas_avg = gas_avg_t1,
+         precip = precip_t1,
+         risk = Risk_t1,
+         governance = Governance_t1,
+         built_env = `Built Environment_t1`,
+         natural_env = `Natural Environment_t1`,
+         society = Society_t1,
+         crsi = CRSI_t1,
          lon = lon_t1,
          lat = lat_t1,
          avg_lon = avg_lon_t1,
@@ -344,11 +517,20 @@ merged_data_record_all_t1 <- select(merged_data_record_all, ID, tribe, FIPS_t1, 
          mid_lon = mid_lon_t1,
          mid_lat = mid_lat_t1)
 
-merged_data_record_all_t2 <- select(merged_data_record_all, ID, tribe, FIPS_t2, n_unique_FIPS_t2, amen_rank_t2, lon_t2, lat_t2, avg_lat_t2, avg_lon_t2, mid_lat_t2, mid_lon_t2) %>% 
+merged_data_record_all_t2 <- select(merged_data_record_all, ID, tribe, FIPS_t2, n_unique_FIPS_t2, amen_rank_t2, oil_avg_t2, gas_avg_t2, precip_t2,  Risk_t2, Governance_t2, `Built Environment_t2`, `Natural Environment_t2`, Society_t2, CRSI_t2, lon_t2, lat_t2, avg_lat_t2, avg_lon_t2, mid_lat_t2, mid_lon_t2) %>% 
   mutate(time = "time 2") %>%
   rename(FIPS = FIPS_t2,
          n_unique_FIPS = n_unique_FIPS_t2,
          amen_rank = amen_rank_t2,
+         oil_avg = oil_avg_t2,
+         gas_avg = gas_avg_t2,
+         precip = precip_t2,
+         risk = Risk_t2,
+         governance = Governance_t2,
+         built_env = `Built Environment_t2`,
+         natural_env = `Natural Environment_t2`,
+         society = Society_t2,
+         crsi = CRSI_t2,
          lon = lon_t2,
          lat = lat_t2,
          avg_lon = avg_lon_t2,
@@ -362,11 +544,20 @@ merged_data_record_all_long <- rbind(merged_data_record_all_t1, merged_data_reco
 
 
 # Reshape data from wide to long for mapping - Average time 1 to record level
-merged_data_record_t1 <- select(merged_data_record, tribe, FIPS_t1, n_unique_FIPS_t1, amen_rank_t1, lon_t1, lat_t1, avg_lat_t1, avg_lon_t1, mid_lat_t1, mid_lon_t1) %>% 
+merged_data_record_t1 <- select(merged_data_record, tribe, FIPS_t1, n_unique_FIPS_t1, amen_rank_t1, oil_avg_t1, gas_avg_t1, precip_t1, Risk_t1, Governance_t1, `Built Environment_t1`, `Natural Environment_t1`, Society_t1, CRSI_t1, lon_t1, lat_t1, avg_lat_t1, avg_lon_t1, mid_lat_t1, mid_lon_t1) %>% 
   mutate(time = "time 1") %>%
   rename(FIPS = FIPS_t1,
          n_unique_FIPS = n_unique_FIPS_t1,
          amen_rank = amen_rank_t1,
+         oil_avg = oil_avg_t1,
+         gas_avg = gas_avg_t1,
+         precip = precip_t1,
+         risk = Risk_t1,
+         governance = Governance_t1,
+         built_env = `Built Environment_t1`,
+         natural_env = `Natural Environment_t1`,
+         society = Society_t1,
+         crsi = CRSI_t1,
          lon = lon_t1,
          lat = lat_t1,
          avg_lon = avg_lon_t1,
@@ -374,11 +565,20 @@ merged_data_record_t1 <- select(merged_data_record, tribe, FIPS_t1, n_unique_FIP
          mid_lon = mid_lon_t1,
          mid_lat = mid_lat_t1)
 
-merged_data_record_t2 <- select(merged_data_record, tribe, FIPS_t2, n_unique_FIPS_t2, amen_rank_t2, lon_t2, lat_t2, avg_lat_t2, avg_lon_t2, mid_lat_t2, mid_lon_t2) %>% 
+merged_data_record_t2 <- select(merged_data_record, tribe, FIPS_t2, n_unique_FIPS_t2, amen_rank_t2, oil_avg_t2, gas_avg_t2, precip_t2, Risk_t2, Governance_t2, `Built Environment_t2`, `Natural Environment_t2`, Society_t2, CRSI_t2, lon_t2, lat_t2, avg_lat_t2, avg_lon_t2, mid_lat_t2, mid_lon_t2) %>% 
   mutate(time = "time 2") %>%
   rename(FIPS = FIPS_t2,
          n_unique_FIPS = n_unique_FIPS_t2,
          amen_rank = amen_rank_t2,
+         oil_avg = oil_avg_t2,
+         gas_avg = gas_avg_t2,
+         precip = precip_t2,
+         risk = Risk_t2,
+         governance = Governance_t2,
+         built_env = `Built Environment_t2`,
+         natural_env = `Natural Environment_t2`,
+         society = Society_t2,
+         crsi = CRSI_t2,
          lon = lon_t2,
          lat = lat_t2,
          avg_lon = avg_lon_t2,
@@ -397,6 +597,15 @@ merged_data_tribe_t1 <- filter(merged_data_record_long, time == "time 1") %>%
   group_by(tribe) %>%
    summarize(n_unique_FIPS = mean(n_unique_FIPS, na.rm = TRUE),
              avg_amen_rank = round(mean(amen_rank, na.rm = TRUE), 2),
+             avg_oil = round(mean(oil_avg, na.rm = TRUE), 2),
+             avg_gas = round(mean(gas_avg, na.rm = TRUE), 2),
+             avg_precip = round(mean(precip, na.rm = TRUE), 2),
+             avg_risk = round(mean(risk, na.rm = TRUE), 2),
+             avg_governance = round(mean(governance, na.rm = TRUE), 2),
+             avg_built_env = round(mean(built_env, na.rm = TRUE), 2),
+             avg_natural_env = round(mean(natural_env, na.rm = TRUE), 2),
+             avg_society = round(mean(society, na.rm = TRUE), 2),
+             avg_crsi = round(mean(crsi, na.rm = TRUE), 2),
              mid_lon = mean(mid_lon, na.rm = TRUE),
              mid_lat = mean(mid_lat, na.rm = TRUE))
 
@@ -409,13 +618,22 @@ merged_data_tr1_r2 <- full_join(merged_data_tribe_t1, merged_data_record_t2_r, b
   mutate(ID = row_number())
 
 # Split them up again so we can reshape them into long format
-merged_data_tr1 <- select(merged_data_tr1_r2, tribe, ID, avg_amen_rank, ends_with("_t1")) %>%
+merged_data_tr1 <- select(merged_data_tr1_r2, tribe, ID, avg_amen_rank, avg_oil, avg_gas, avg_precip, avg_risk, avg_governance, avg_built_env, avg_natural_env, avg_society, avg_crsi, ends_with("_t1")) %>%
   rename(
     amen_rank = avg_amen_rank,
+    oil_avg = avg_oil,
+    gas_avg = avg_gas,
+    precip = avg_precip,
+    risk = avg_risk, 
+    governance = avg_governance, 
+    built_env = avg_built_env,
+    natural_env = avg_natural_env, 
+    society_ = avg_society, 
+    crsi = avg_crsi,
     lon = mid_lon_t1,
     lat = mid_lat_t1)
 
-merged_data_r2 <- select(merged_data_tr1_r2, tribe, ID, FIPS, time, amen_rank, lon, lat, ends_with("_t2"))
+merged_data_r2 <- select(merged_data_tr1_r2, tribe, ID, FIPS, time, amen_rank, oil_avg, gas_avg, precip, risk, governance, built_env, natural_env, society, crsi, lon, lat, ends_with("_t2"))
 
 # Stack time 1 tribe level data with time 2 record level data
 # Use this data.frame for time 1 tribe to time 2 record connecting lines map
@@ -431,7 +649,7 @@ save.image("processed_data.RData")
 
 # --- Map Data --------------------------------------------
 
-# Create wrapper fn to make map
+# Create wrapper fn to make map with amenity rank
 map_tribe <- function(df, tribe_lst = NA, mid_t2 = FALSE, circle_size = c(3,5), show_legend = TRUE) {
   
   # Check if tribe_lst is presence, if it is, subset data to only those tribes
