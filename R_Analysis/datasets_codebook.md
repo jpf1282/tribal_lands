@@ -15,9 +15,9 @@
      + `n_unique_FIPS_t1` , `n_unique_FIPS_t2`
  - **Number of Possible Pairwise Migration Records for a tribe** total number of pairwise migration possibilities for a tribe. e.g. All possible routes from T1 to T2.
      + `n_record`
- - **Average Locations for tribe:** average (centroid) latitudes and longitudes at T1 and T2
+ - **Average Location for tribe:** average (centroid) latitudes and longitudes at T1 and T2
      + `avg_lat_t1`, `avg_lat_t2`, `avg_lon_t1`, `avg_lon_t2`
- - **Average Locations for tribe:** midpoint (alternative but similar avg. centroid measure) latitudes and longitudes at Time1 and Time2
+ - **Average Location for tribe:** midpoint (alternative but similar avg. centroid measure) latitudes and longitudes at Time1 and Time2
      + `mid_lat_t1`, `mid_lat_t2`, `mid_lon_t1`, `mid_lon_t2`
  - **Average distance in KM between T1 and T2 for a tribe** using two centroids options above
      + `avg_dist` and `mid_dist`
@@ -83,10 +83,10 @@
      + `n_unique_FIPS_t1` , `n_unique_FIPS_t2`
  - **Number of Possible Pairwise Migration Records for a tribe** total number of pairwise migration possibilities for a tribe. e.g. All possible routes from T1 to T2.
      + `n_record`
- - **Average Locations for tribe:** average (centroid) latitudes and longitudes at T1 and T2
+ - **Average Location for tribe:** average (centroid) latitudes and longitudes at T1 and T2
      + `avg_lat_t1`, `avg_lat_t2`, `avg_lon_t1`, `avg_lon_t2`
      + these are averaged across all of the counties for that tribe, so are same as the tribes_level.csv dataset above
- - **Average Locations for tribe:** midpoint (alternative but similar avg. centroid measure) latitudes and longitudes at Time1 and Time2
+ - **Average Location for tribe:** midpoint (alternative but similar avg. centroid measure) latitudes and longitudes at Time1 and Time2
      + `mid_lat_t1`, `mid_lat_t2`, `mid_lon_t1`, `mid_lon_t2`
      + these are averaged across all of the counties for that tribe, so are same as the tribes_level.csv dataset above
  - **Average distance in KM between T1 and T2 for a tribe** using two centroids options above
