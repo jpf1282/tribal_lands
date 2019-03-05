@@ -3,19 +3,16 @@ title: "Explore Difference in Amenity Rank Scores"
 output: html_document
 ---
 
-
-<!-- # The data created for this analysis is in the `data wrangle change score centroid and map data.R` file in the main `R_Analysis` folder -->
-<!-- To output to HTML, use the Knit function above in the Rstudio menu beneath the tabs -->
-
 ```{r setup, include = FALSE}
 
 knitr::opts_chunk$set(echo = TRUE)
+options(scipen=999)
 
 ```
 
 ## Setup Library
 Install these packages if neccessary.
-```{r project_setup, message = FALSE}
+```{r project_setup, message = FALSE, warning = FALSE}
 
 library(readr)
 library(tidyr)
@@ -30,18 +27,13 @@ library(ggbeeswarm)
 
 ```
 
-# Set WD
-```{r}
-setwd("/Users/jf/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Statistical_Analysis/")
-```
-
 ## Data Preparation
 
 ### Load Data
 Load the data imported, processed and saved from "data wrangle change score centroid and map data.R".
 ```{r}
 
-load("/Users/jf/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/processed_data.RData")
+load("processed_data v2.RData")
 
 ```
 
@@ -69,7 +61,7 @@ t1and2_lst <- group_by(data_t1and2_long, tribe, time) %>%
   ungroup() %>%
   group_by(tribe) %>%
   count() %>%
-  filter(nn < 2)
+  filter(n < 2)
 
 nrow(t1and2_lst)
 ```
@@ -211,7 +203,7 @@ model <- model %>%
 ```{r}
 
 results_df <- inner_join(model, merged_data_tribe, by = "tribe") %>%
-  mutate(`Avg Diff Rank` = avg_amen_rank_t1 - avg_amen_rank_t2) %>%
+  mutate(`Avg Diff Rank` = avg_amen_rank_t2 - avg_amen_rank_t1) %>%
   select(tribe, sig, p.value, `Avg Diff Rank`, avg_amen_rank_t1, avg_amen_rank_t2, n_unique_FIPS_t1, n_unique_FIPS_t2, mid_dist) %>%
   arrange(p.value) %>%
   rename(
@@ -239,6 +231,8 @@ datatable(results_df,
 
 ```{r}
 
+b_sig_tribe_lst <- filter(results_df, sig == "yes") %>%
+  select(tribe)
 sig_tribe_lst <- filter(results_df, p.value < .05) %>%
   select(tribe)
 
@@ -247,7 +241,7 @@ sig_tribe_lst <- filter(results_df, p.value < .05) %>%
 **Interpretation**
 
 * None of the comparisons at the tribe levels achieve statistical significance when the Bonferroni correction is used.
-* The tests has low statistical power to detect differences given the number of observations at time 2 is much smaller than time 1.
+* The tests have low statistical power to detect differences given the number of observations at time 2 is much smaller than time 1.
 * If Bonferroni correction is not used, the median amenity rank scores was significantly differ between time 1 and 2 for seven tribes :(`r sig_tribe_lst$tribe`).
 * Results with NA p values are from tribes where they have the same amenity rank scores between time 1 and 2 and as such no statistical tests can be peformed.
 
