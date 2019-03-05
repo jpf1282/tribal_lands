@@ -107,10 +107,16 @@ ggplot(data_long, aes(time, gas_avg, colour = time)) +
 # AGGREGATE AVERAGE OF GAS ACROSS ALL TRIBES AT T1 to T2
 ```{r, message = FALSE, warning = FALSE}
 
-# AGGREGATE MEAN, MAX... 
+# AGGREGATE MEAN, MAX... USING records_level data
 data_long %>%
   group_by(time) %>%
   summarize(my_mean_gas = mean(gas_avg, na.rm=T), my_max_gas = max(gas_avg, na.rm=T), my_sum_gas = sum(gas_avg, na.rm=T))
+
+
+# TRIBE_LEVEL.csv average change scores for each tribe
+ggplot(merged_data_tribe, aes(tribe, avg_gas_change_score, label=NA)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=2))
 
 ```
 
@@ -119,10 +125,7 @@ data_long %>%
 ## JUSTIN, CHANGE SCORE ANALYSIS
 ```{r}
 
-# TRIBE_LEVEL.csv averages
-ggplot(merged_data_tribe, aes(tribe, avg_gas_change_score, label=NA)) +
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=2))
+
 
 ```
 
