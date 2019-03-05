@@ -75,20 +75,63 @@ nrow(t1and2_lst)
 
 * The distribution of gas production in time 1 and time 2 is skewed to the right, with notable outliers and zero-inflation.
 
-#### All Data
+#### All Data Histograms
 ```{r, message = FALSE, warning = FALSE}
 
+#histogram
 ggplot(data_long, aes(gas_avg, fill = time)) +
   facet_grid(rows = vars(time), scales = "free") +
-  geom_histogram(position = "dodge") +
+  geom_histogram(position = "dodge", bins=75) + 
   theme_minimal()
 
+#logged histogram (**IMPORTANT - Y-axis scales are dfferent..much lower time2)
+ggplot(data_long, aes(gas_avg, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge", bins=75) + scale_x_log10() + 
+  theme_minimal()
+
+#overlaid logged histogram
+ggplot(data_long, aes(gas_avg, fill = time)) +
+  geom_histogram(position = "dodge", alpha=0.5) + scale_x_log10() +
+  theme_minimal()
+
+# BOXPLOT
 ggplot(data_long, aes(time, gas_avg, colour = time)) +
   geom_boxplot() +
   geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
   theme_minimal()
 
 ```
+
+
+# AGGREGATE AVERAGE OF GAS ACROSS ALL TRIBES AT T1 to T2
+```{r, message = FALSE, warning = FALSE}
+
+# AGGREGATE MEAN, MAX... 
+data_long %>%
+  group_by(time) %>%
+  summarize(my_mean_gas = mean(gas_avg, na.rm=T), my_max_gas = max(gas_avg, na.rm=T), my_sum_gas = sum(gas_avg, na.rm=T))
+
+```
+
+
+
+## JUSTIN, CHANGE SCORE ANALYSIS
+```{r}
+
+# TRIBE_LEVEL.csv averages
+ggplot(merged_data_tribe, aes(tribe, avg_gas_change_score, label=NA)) +
+  geom_bar(stat="identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=2))
+
+```
+
+
+
+
+
+
+
 
 #### Look at only those with gas production only, 90th percentile cutoff
 
@@ -98,12 +141,21 @@ ggplot(data_long, aes(time, gas_avg, colour = time)) +
 
 data_long_gas_only <- filter(data_long, gas_avg > 0)
 
+# Histogram
 ggplot(data_long_gas_only, aes(gas_avg, fill = time)) +
   facet_grid(rows = vars(time), scales = "free") +
   geom_histogram(position = "dodge") +
   theme_minimal() +
   xlim(0, quantile(data_long_gas_only$gas_avg, c(.90), na.rm = TRUE))
 
+# Overlaid Histogram
+ggplot(data_long_gas_only, aes(gas_avg, fill = time)) +
+  geom_histogram(position = "dodge", alpha=0.5) +
+  theme_minimal() +
+  xlim(0, quantile(data_long_gas_only$gas_avg, c(.90), na.rm = TRUE)) +
+  ylim(0,600)
+
+# Boxplot
 ggplot(data_long_gas_only, aes(time, gas_avg, colour = time)) +
   geom_boxplot() +
   geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
@@ -111,6 +163,10 @@ ggplot(data_long_gas_only, aes(time, gas_avg, colour = time)) +
   ylim(0, quantile(data_long_gas_only$gas_avg, c(.90), na.rm = TRUE))
 
 ```
+
+
+
+
 
 ### Tribes with both time 1 or time 2 data
 
