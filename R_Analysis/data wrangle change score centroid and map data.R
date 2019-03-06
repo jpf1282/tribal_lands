@@ -544,7 +544,7 @@ merged_data_record_all_long <- rbind(merged_data_record_all_t1, merged_data_reco
 
 
 # Reshape data from wide to long for mapping - Average time 1 to record level
-merged_data_record_t1 <- select(merged_data_record, tribe, FIPS_t1, n_unique_FIPS_t1, amen_rank_t1, oil_avg_t1, gas_avg_t1, precip_t1, Risk_t1, Governance_t1, `Built Environment_t1`, `Natural Environment_t1`, Society_t1, CRSI_t1, lon_t1, lat_t1, avg_lat_t1, avg_lon_t1, mid_lat_t1, mid_lon_t1) %>% 
+merged_data_record_t1 <- select(merged_data_record, tribe, FIPS_t1, state_from_fips_t1, n_unique_FIPS_t1, amen_rank_t1, oil_avg_t1, gas_avg_t1, precip_t1, Risk_t1, Governance_t1, `Built Environment_t1`, `Natural Environment_t1`, Society_t1, CRSI_t1, lon_t1, lat_t1, avg_lat_t1, avg_lon_t1, mid_lat_t1, mid_lon_t1) %>% 
   mutate(time = "time 1") %>%
   rename(FIPS = FIPS_t1,
          n_unique_FIPS = n_unique_FIPS_t1,
@@ -565,7 +565,7 @@ merged_data_record_t1 <- select(merged_data_record, tribe, FIPS_t1, n_unique_FIP
          mid_lon = mid_lon_t1,
          mid_lat = mid_lat_t1)
 
-merged_data_record_t2 <- select(merged_data_record, tribe, FIPS_t2, n_unique_FIPS_t2, amen_rank_t2, oil_avg_t2, gas_avg_t2, precip_t2, Risk_t2, Governance_t2, `Built Environment_t2`, `Natural Environment_t2`, Society_t2, CRSI_t2, lon_t2, lat_t2, avg_lat_t2, avg_lon_t2, mid_lat_t2, mid_lon_t2) %>% 
+merged_data_record_t2 <- select(merged_data_record, tribe, FIPS_t2, state_from_fips_t1, n_unique_FIPS_t2, amen_rank_t2, oil_avg_t2, gas_avg_t2, precip_t2, Risk_t2, Governance_t2, `Built Environment_t2`, `Natural Environment_t2`, Society_t2, CRSI_t2, lon_t2, lat_t2, avg_lat_t2, avg_lon_t2, mid_lat_t2, mid_lon_t2) %>% 
   mutate(time = "time 2") %>%
   rename(FIPS = FIPS_t2,
          n_unique_FIPS = n_unique_FIPS_t2,
