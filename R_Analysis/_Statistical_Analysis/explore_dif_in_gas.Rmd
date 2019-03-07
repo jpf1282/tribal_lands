@@ -46,7 +46,7 @@ Keep distinct records within each time point only because keeping all pairwise r
 data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE)
 
 #save this df for mapping in other programs
-# write_csv(data_long, "data_long_records_for_mapping.csv")
+write_csv(data_long, "data_long_records_for_mapping.csv")
 
 ```
 
