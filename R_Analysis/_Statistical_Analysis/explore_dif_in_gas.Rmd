@@ -48,6 +48,8 @@ data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all 
 #save this df for mapping in other programs
 write_csv(data_long, "data_long_records_for_mapping.csv")
 
+# length(unique(data_long$state_from_fips))
+
 ```
 
 Create data.frame to include only tribes with time 1 and 2 data.
