@@ -1,6 +1,7 @@
 ---
 title: "Explore Difference in Gas Production"
-date: '2019-02-25'
+author: "Benedito Chou"
+date: '2019-03-25'
 output: html_document
 ---
 
@@ -34,7 +35,7 @@ library(ggbeeswarm)
 Load the data imported, processed and saved from "data wrangle change score centroid and map data.R".
 ```{r}
 
-load("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/processed_data.RData")
+load("processed_data v2.RData")
 
 ```
 
@@ -44,11 +45,6 @@ Keep distinct records within each time point only because keeping all pairwise r
 ```{r}
 
 data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE)
-
-#save this df for mapping in other programs
-write_csv(data_long, "data_long_records_for_mapping.csv")
-
-# length(unique(data_long$state_from_fips))
 
 ```
 
@@ -80,66 +76,20 @@ nrow(t1and2_lst)
 
 * The distribution of gas production in time 1 and time 2 is skewed to the right, with notable outliers and zero-inflation.
 
-#### All Data Histograms
+#### All Data
 ```{r, message = FALSE, warning = FALSE}
 
-#histogram
 ggplot(data_long, aes(gas_avg, fill = time)) +
   facet_grid(rows = vars(time), scales = "free") +
-  geom_histogram(position = "dodge", bins=75) + 
+  geom_histogram(position = "dodge") +
   theme_minimal()
 
-#logged histogram (**IMPORTANT - Y-axis scales are dfferent..much lower time2)
-ggplot(data_long, aes(gas_avg, fill = time)) +
-  facet_grid(rows = vars(time), scales = "free") +
-  geom_histogram(position = "dodge", bins=75) + scale_x_log10() + 
-  theme_minimal()
-
-#overlaid logged histogram
-ggplot(data_long, aes(gas_avg, fill = time)) +
-  geom_histogram(position = "dodge", alpha=0.5) + scale_x_log10() +
-  theme_minimal()
-
-# BOXPLOT
 ggplot(data_long, aes(time, gas_avg, colour = time)) +
   geom_boxplot() +
   geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
   theme_minimal()
 
 ```
-
-
-# AGGREGATE AVERAGE OF GAS ACROSS ALL TRIBES AT T1 to T2
-```{r, message = FALSE, warning = FALSE}
-
-# AGGREGATE MEAN, MAX... USING records_level data
-data_long %>%
-  group_by(time) %>%
-  summarize(my_mean_gas = mean(gas_avg, na.rm=T), my_max_gas = max(gas_avg, na.rm=T), my_sum_gas = sum(gas_avg, na.rm=T))
-
-
-# TRIBE_LEVEL.csv average change scores for each tribe
-ggplot(merged_data_tribe, aes(tribe, avg_gas_change_score, label=NA)) +
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=2))
-
-```
-
-
-
-## JUSTIN, CHANGE SCORE ANALYSIS
-```{r}
-
-
-
-```
-
-
-
-
-
-
-
 
 #### Look at only those with gas production only, 90th percentile cutoff
 
@@ -149,21 +99,12 @@ ggplot(merged_data_tribe, aes(tribe, avg_gas_change_score, label=NA)) +
 
 data_long_gas_only <- filter(data_long, gas_avg > 0)
 
-# Histogram
 ggplot(data_long_gas_only, aes(gas_avg, fill = time)) +
   facet_grid(rows = vars(time), scales = "free") +
   geom_histogram(position = "dodge") +
   theme_minimal() +
   xlim(0, quantile(data_long_gas_only$gas_avg, c(.90), na.rm = TRUE))
 
-# Overlaid Histogram
-ggplot(data_long_gas_only, aes(gas_avg, fill = time)) +
-  geom_histogram(position = "dodge", alpha=0.5) +
-  theme_minimal() +
-  xlim(0, quantile(data_long_gas_only$gas_avg, c(.90), na.rm = TRUE)) +
-  ylim(0,600)
-
-# Boxplot
 ggplot(data_long_gas_only, aes(time, gas_avg, colour = time)) +
   geom_boxplot() +
   geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
@@ -171,10 +112,6 @@ ggplot(data_long_gas_only, aes(time, gas_avg, colour = time)) +
   ylim(0, quantile(data_long_gas_only$gas_avg, c(.90), na.rm = TRUE))
 
 ```
-
-
-
-
 
 ### Tribes with both time 1 or time 2 data
 
@@ -231,19 +168,24 @@ ggplot(data_t1and2_long_gas_only, aes(time, gas_avg, colour = time)) +
 
 ```{r}
 
-t.test(gas_avg ~ time, data = data_long, paired = FALSE)
+ttest_model <- t.test(gas_avg ~ time, data = data_long, paired = FALSE)
+
+ttest_model
 
 ```
 
 ```{r}
 
+ttest_model <- tidy(ttest_model)
+
 mean_t1 <- round(mean(filter(data_long, time == "time 1")$gas_avg, na.rm = T), 0)
 mean_t2 <- round(mean(filter(data_long, time == "time 2")$gas_avg, na.rm = T), 0)
 sd_t1 <- round(sd(filter(data_long, time == "time 1")$gas_avg, na.rm = T), 0)
 sd_t2 <- round(sd(filter(data_long, time == "time 2")$gas_avg, na.rm = T), 0)
-pvalue <- round(tidy(t.test(gas_avg ~ time, data = data_long, paired = FALSE))$p.value, 3)
-tvalue <- round(tidy(t.test(gas_avg ~ time, data = data_long, paired = FALSE))$statistic, 3)
-degreef <- round(tidy(t.test(gas_avg ~ time, data = data_long, paired = FALSE))$parameter, 3)
+
+pvalue <- round(ttest_model$p.value, 3)
+tvalue <- round(ttest_model$statistic, 3)
+degreef <- round(ttest_model$parameter, 3)
 
 ```
 
@@ -254,24 +196,80 @@ degreef <- round(tidy(t.test(gas_avg ~ time, data = data_long, paired = FALSE))$
 ### Use only records where tribes have time 1 and 2 data
 
 ```{r}
-t.test(gas_avg ~ time, data = data_t1and2_long, paired = FALSE)
+
+ttest_model <- t.test(gas_avg ~ time, data = data_t1and2_long, paired = FALSE)
+
+ttest_model
+
 ```
 
 ```{r}
+
+ttest_model <- tidy(ttest_model)
 
 mean_t1 <- round(mean(filter(data_t1and2_long, time == "time 1")$gas_avg, na.rm = T), 0)
 mean_t2 <- round(mean(filter(data_t1and2_long, time == "time 2")$gas_avg, na.rm = T), 0)
 sd_t1 <- round(sd(filter(data_t1and2_long, time == "time 1")$gas_avg, na.rm = T), 0)
 sd_t2 <- round(sd(filter(data_t1and2_long, time == "time 2")$gas_avg, na.rm = T), 0)
-pvalue <- round(tidy(t.test(gas_avg ~ time, data = data_t1and2_long, paired = FALSE))$p.value, 3)
-tvalue <- round(tidy(t.test(gas_avg ~ time, data = data_t1and2_long, paired = FALSE))$statistic, 3)
-degreef <- round(tidy(t.test(gas_avg ~ time, data = data_t1and2_long, paired = FALSE))$parameter, 3)
+
+pvalue <- round(ttest_model$p.value, 3)
+tvalue <- round(ttest_model$statistic, 3)
+degreef <- round(ttest_model$parameter, 3)
 
 ```
 
 **Interpretation**
 
-* At the aggregate level for tribes with migration, the difference in gas production between time 1 (M = `r mean_t1` SD = `r sd_t1`) and time 2 (M = `r mean_t2`, SD = `r sd_t2`) was statistically signficant (t(`r degreef`)= `r tvalue`, `r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
+* At the aggregate level for tribes with migration, the difference in gas production between time 1 (M = `r mean_t1`, SD = `r sd_t1`) and time 2 (M = `r mean_t2`, SD = `r sd_t2`) was statistically signficant (t(`r degreef`)= `r tvalue`, `r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
+
+
+### (NEW) Test for significant difference at the aggregate level
+### Alternative Test - Using Repeated Measure ANOVA
+
+Restructure data for repeated measure ANOVA and convert tribe and time as factor for modeling
+```{r restructure_data}
+
+data_wide <- filter(merged_data_record_all, time == "Time 1 and 2")
+
+gas_data_wide <- select(data_wide, ID, tribe, FIPS_t1, FIPS_t2, time, gas_avg_t1, gas_avg_t2, gas_change_score) %>%
+  filter(!is.na(gas_avg_t1), !is.na(gas_avg_t2))
+
+gas_data_long <- gather(gas_data_wide, "time", "gas", -ID, -tribe, -time, -gas_change_score, -FIPS_t1, -FIPS_t2) %>% ungroup() %>%
+  mutate(tribe = factor(tribe),
+         time = factor(time))
+
+```
+
+### Repeated Measure ANOVA
+
+* If we assume pairwise migrations between counties occured for each tribe, Repeated Measure ANOVA is a parameteric test appropriate for making paired sample mean comparisions over time.
+* Use Repeated Measure ANOVA because the outcome gas production is a continous measures and is predicted by a single within subject factor (time).
+* Repeated Measure ANOVA can only be run with tribes with both time 1 and time 2 data.
+
+###  Use only records where tribes have time 1 and 2 data
+```{r}
+
+aov_model <- aov(gas ~ time + Error(tribe / time), data = gas_data_long)
+
+summary(aov_model)
+
+```
+
+```{r}
+
+aov_model <- tidy(aov_model)
+
+pvalue <- round(aov_model$p.value[2], 3)
+Fvalue <- aov_model$statistic[2]
+degreef1 <- aov_model$df[2]
+degreef2 <- aov_model$df[3]
+
+
+```
+
+**Interpretation**
+
+* At the aggregate level for tribes with migration, the difference in gas production between time 1 (M = `r mean_t1` SD = `r sd_t1`) and time 2 (M = `r mean_t2`, SD = `r sd_t2`) was statistically signficant (F(`r degreef1`, `r degreef2`)= `r Fvalue`, `r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
 
 
 ### (2) Test for significant difference at tribe level
@@ -373,13 +371,110 @@ sig_tribe_lst <- filter(results_df, p.value < .05) %>%
 
 **Interpretation**
 
-* The mean gas production comparisons for one tribe (`r b_sig_tribe_lst$tribe`) achieve statistical significance when the Bonferroni correction is used.
+* The mean gas production comparisons for `r nrow(b_sig_tribe_lst)` tribe (`r b_sig_tribe_lst$tribe`) achieve statistical significance when the Bonferroni correction is used.
 * The tests has low statistical power to detect differences given the number of observations at time 2 is much smaller than time 1.
-* If Bonferroni correction is not used, gas production was significantly differ between time 1 and 2 for 7 tribes :(`r sig_tribe_lst$tribe`).
+* If Bonferroni correction is not used, gas production was significantly differ between time 1 and 2 for `r nrow(sig_tribe_lst)` tribes :(`r sig_tribe_lst$tribe`).
 * Results with NA p values are from tribes where there isn't sufficient data points in both time point to perform the planned statistical tests (t-test).
 
 **Overall Interpretation**
 
-* Overall, a statistically significant difference was found at the aggregate level. At the tribe level, when correction for multiple comparisons was made, gas production for one tribe were found to be statistically differ between time 1 and time 2. Without correction, gas production was found to be statistically differ for 7 tribes.
+* Overall, a statistically significant difference was found at the aggregate level. At the tribe level, when correction for multiple comparisons was made, gas production for `r nrow(b_sig_tribe_lst)` tribe were found to be statistically differ between time 1 and time 2. Without correction, gas production was found to be statistically differ for `r nrow(sig_tribe_lst)` tribes.
 
 * The lack of significant differences at the tribe level could be attributed to the low statistical power arises from the small number of observations at time 2. In some cases, there is only 1 data point in time 2 or time 1, which preclude the use of t-test to test for their mean differences.
+
+
+### (NEW) Run Repeated Measure ANOVA in Batch
+
+* Run repeated measure ANOVA in batch using group_by and do at the tribe level.
+* Include a try call to catch error.
+* Use tidy from broom package to format the results into a data.frame.
+* Replace NA estimate with all NA for that comparison.
+* Filter out tribes where test cannot be run due to insufficient sample size.
+
+```{r, message = FALSE, warning = FALSE}
+
+model <- group_by(gas_data_long, tribe) %>%
+do(tryCatch( {tidy(aov(gas ~ time + Error(ID / time), data = .))},
+  error = function(e) {tidy((aov(gas ~ time + Error(ID / time), data = .))) %>% mutate(estimate = NA)}
+    ))
+
+model[!!rowSums(is.na(model)),-1] <- NA
+
+model <- filter(model, stratum == "Within", term == "time")
+
+
+```
+
+Calculate number of test based only on tribes where there is non-zero difference in gas production between time 1 and 2.
+
+```{r}
+
+no_test <- nrow(filter(model, !is.na(p.value)))
+
+```
+
+* Create sig column to flag statistical significance results. 
+* p-value cutoff is adjusted to control for Type I error due to multiple comparisons using Bonferroni correction (p value threshold = .05 / number of tests or `r no_test`), adjusted p-value threshold = `r .5/no_test`.
+
+```{r, message = FALSE, warning = FALSE}
+
+model <- model %>%
+  mutate(sig = ifelse(p.value < .05 / no_test, "yes", "no"))
+
+```
+
+* Add average gas production, distance, and no of unique FIPS to help with interpretation
+* Rename some variables for prettier column headers
+
+```{r}
+
+results_df <- inner_join(model, merged_data_tribe, by = "tribe") %>%
+  mutate(`Avg Diff Gas` = avg_gas_avg_t2 - avg_gas_avg_t1) %>%
+  select(tribe, sig, p.value, `Avg Diff Gas`, avg_gas_avg_t1, avg_gas_avg_t2, n_unique_FIPS_t1, n_unique_FIPS_t2, mid_dist) %>%
+  arrange(p.value) %>%
+  rename(
+    `Avg Gas T1` = avg_gas_avg_t1,
+    `Avg Gas T2` = avg_gas_avg_t2,
+    `Unique FIPS T1` = n_unique_FIPS_t1,
+    `Unique FIPS T2` = n_unique_FIPS_t2,
+    `Mid Distance` = mid_dist)
+
+```
+
+
+### Results Table 
+#### Ordered by p value in ascending order
+
+```{r}
+
+datatable(results_df,
+          filter = "top",
+          options = list(pageLength = 20)) %>%
+   formatRound(columns = c('p.value'), digits = 3) %>%
+   formatRound(columns = c('Avg Diff Gas', 'Avg Gas T1', 'Avg Gas T2', 'Mid Distance'), digits = 2)
+
+```
+
+```{r}
+
+b_sig_tribe_lst <- filter(results_df, sig == "yes") %>%
+  select(tribe)
+sig_tribe_lst <- filter(results_df, p.value < .05) %>%
+  select(tribe)
+
+```
+
+**Interpretation**
+
+* The mean gas production comparisons for `r nrow(b_sig_tribe_lst)` tribes (`r b_sig_tribe_lst$tribe`) achieve statistical significance when the Bonferroni correction is used.
+* The tests has low statistical power to detect differences given the number of observations at time 2 is much smaller than time 1.
+* If Bonferroni correction is not used, gas production was significantly differ between time 1 and 2 for `r nrow(sig_tribe_lst)` tribes :(`r sig_tribe_lst$tribe`).
+* Of the 184 tribes with migrations, `r 184 - no_test` has insufficient data points in both time points to perform the planned statistical tests (repeated measure ANOVA).
+
+**Overall Interpretation**
+
+* Overall, a statistically significant difference was found at the aggregate level. At the tribe level, when correction for multiple comparisons was made, gas production for `r nrow(b_sig_tribe_lst)` tribes were found to be statistically differ between time 1 and time 2. Without correction, gas production was found to be statistically differ for `r nrow(sig_tribe_lst)` tribes.
+
+* The lack of significant differences at the tribe level could be attributed to the low statistical power arises from the small number of observations at time 2. In some cases, there is only 1 data point in time 2 or time 1, which preclude the use of repeated measure ANOVA to test for their mean differences.
+
+* Between the two set of tests (independent t-test and repeated measure ANOVA), the independent tests is more conservative when come to achieving statistical significance and the repeated measures ANOVA is more powerful in detecting observed differences in paired data. The repeated measure tests also have more significant findings because we have many more observations by using all-pairs and partialling out the intra-correlations.
