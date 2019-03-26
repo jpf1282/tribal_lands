@@ -64,6 +64,9 @@ govt3 <- govt2 %>% unite(FIPS, STATEFP.x, COUNTYFP.x, sep = "", remove = FALSE)
 # govt3 <- select(govt3, -c(COUNTYFP.x,COUNTYNS,STATEFP.x,NAME.x))
 # write_csv(govt3, "~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Variables/PAD-US/protected_areas_master.csv")
 
+
+
+
 #
 # ## Join with counties at the records level for both t1 and t2
 setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/")
