@@ -89,16 +89,15 @@ ggplot(data_long, aes(time, n_unique_FIPS, colour = time)) +
   theme_minimal()
 
 # Finding mean/median TRIBE LEVEL
-mean(merged_data_tribe$n_unique_FIPS_t1)
+summary(merged_data_tribe$n_unique_FIPS_t1)
+summary(merged_data_tribe$n_unique_FIPS_t2)
 mean(merged_data_tribe$n_unique_FIPS_t2)
 median(merged_data_tribe$n_unique_FIPS_t1)
 median(merged_data_tribe$n_unique_FIPS_t2)
 
 # Finding mean/median RECORDS LEVEL
-mean(filter(data_long, time == "time 1")$n_unique_FIPS)
-mean(filter(data_long, time == "time 2")$n_unique_FIPS)
-median(filter(data_long, time == "time 1")$n_unique_FIPS)
-median(filter(data_long, time == "time 2")$n_unique_FIPS)
+summary(filter(data_long, time == "time 1")$n_unique_FIPS)
+summary(filter(data_long, time == "time 2")$n_unique_FIPS)
 
 
 ```
