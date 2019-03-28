@@ -5,9 +5,9 @@
 ## Import government .csv's and recalculate proportions so that they are between 0 - 1
 
 #KATIE wd
-setwd("/Users/kathrynmcconnell/Dropbox (Yale_FES)/Tribal Lands/FedGov_Ben")
+# setwd("/Users/kathrynmcconnell/Dropbox (Yale_FES)/Tribal Lands/FedGov_Ben")
 #JUSTIN wd
-#setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Variables/PAD-US/")
+setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Variables/PAD-US/")
 
 blm <- read_csv("BLM.csv") %>%
   mutate(blm_prop = BLM_Area / CountyArea) %>%
@@ -104,76 +104,79 @@ govt3 <- mutate(govt2,
 govt4 <- govt3 %>% unite(FIPS, STATEFP.x, COUNTYFP.x, sep = "", remove = FALSE) 
 
 # # Clean a bit more to prepare for master join. RENAMING columns
-# govt4 <- rename(govt4,
-#                 pa_all = allfed_prop,
-#                 pa_blm = blm_prop,
-#                 pa_dod = dod_prop,
-#                 pa_doe = doe_prop,
-#                 pa_nps = nps_prop,
-#                 pa_usfs = usfs_prop,
-#                 pa_usfws = usfws_prop)
-
-# Keep only relevant variables
-# govt3 <- select(govt3, -c(COUNTYFP.x,COUNTYNS,STATEFP.x,NAME.x))
-# write_csv(govt3, "~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Variables/PAD-US/protected_areas_master.csv")
+govt4 <- rename(govt4,
+                p_all = allfed_prop,
+                p_blm = blm_prop,
+                p_dod = dod_prop,
+                p_doe = doe_prop,
+                p_nps = nps_prop,
+                p_usfs = usfs_prop,
+                p_usfws = usfws_prop)
 
 
-#
-# ## Join with counties at the records level for both t1 and t2
-#setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/") # Justin's
-setwd("/Users/kathrynmcconnell/Documents/GitHub/tribal_lands2/R_Analysis") # Katie's
-records_level <- read_csv("change_scores_centroid_dist_records_level.csv")
 
-# Join to t1 counties, rename columns so that they refer to t1, remove old columns (with old names)
-govt_records_level_t1 <- left_join(records_level, govt4, by = c("FIPS_t1" = "FIPS")) %>% # join
-  mutate(StateFP_t1 = STATEFP.x, # rename columns
-         CountyFP_t1 = COUNTYFP.x,
-         CountyNS_t1 = COUNTYNS,
-         blm_prop_t1 = blm_prop,
-         dod_prop_t1 = dod_prop,
-         doe_prop_t1 = doe_prop,
-         nps_prop_t1 = nps_prop,
-         usfs_prop_t1 = usfs_prop,
-         usfws_prop_t1 = usfws_prop,
-         allfed_prop_t1 = allfed_prop) %>%
-  select(-(STATEFP.x:allfed_prop)) # remove old column names
+# Keep only relevant variables and Write CSV
+govt4 <- select(govt4, FIPS, p_all, p_blm, p_dod, p_doe, p_nps, p_usfs, p_usfws)
 
-# Join federal lands to t2 counties, rename columns so that they refer to t2, remove old columns (with old names)
-# This is the final dataframe (after replacing NA's with zeros below)
-govt_records_level_t1t2 <- left_join(govt_records_level_t1, govt4, by = c("FIPS_t2" = "FIPS")) %>%
-  mutate(StateFP_t2 = STATEFP.x, # rename columns
-         CountyFP_t2 = COUNTYFP.x,
-         CountyNS_t2 = COUNTYNS,
-         blm_prop_t2 = blm_prop,
-         dod_prop_t2 = dod_prop,
-         doe_prop_t2 = doe_prop,
-         nps_prop_t2 = nps_prop,
-         usfs_prop_t2 = usfs_prop,
-         usfws_prop_t2 = usfws_prop,
-         allfed_prop_t2 = allfed_prop) %>%
-  select(-(STATEFP.x:allfed_prop)) # remove old column names
+write_csv(govt4, "~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Variables/PAD-US/protected_areas_master.csv")
 
-# check to see how many columns were added in the join (should only be 10, the new mutated columns)
-ncol(govt_records_level_t1t2) - ncol(govt_records_level_t1)
-
-# Convert all federal land NA's to 0's (we know that absence of data for these columns means no govt presence)
-# time 1
-govt_records_level_t1t2$blm_prop_t1[is.na(govt_records_level_t1t2$blm_prop_t1)] <- 0
-govt_records_level_t1t2$dod_prop_t1[is.na(govt_records_level_t1t2$dod_prop_t1)] <- 0
-govt_records_level_t1t2$doe_prop_t1[is.na(govt_records_level_t1t2$doe_prop_t1)] <- 0
-govt_records_level_t1t2$nps_prop_t1[is.na(govt_records_level_t1t2$nps_prop_t1)] <- 0
-govt_records_level_t1t2$usfs_prop_t1[is.na(govt_records_level_t1t2$usfs_prop_t1)] <- 0
-govt_records_level_t1t2$usfws_prop_t1[is.na(govt_records_level_t1t2$usfws_prop_t1)] <- 0
-
-# time 2
-govt_records_level_t1t2$blm_prop_t2[is.na(govt_records_level_t1t2$blm_prop_t2)] <- 0
-govt_records_level_t1t2$dod_prop_t2[is.na(govt_records_level_t1t2$dod_prop_t2)] <- 0
-govt_records_level_t1t2$doe_prop_t2[is.na(govt_records_level_t1t2$doe_prop_t2)] <- 0
-govt_records_level_t1t2$nps_prop_t2[is.na(govt_records_level_t1t2$nps_prop_t2)] <- 0
-govt_records_level_t1t2$usfs_prop_t2[is.na(govt_records_level_t1t2$usfs_prop_t2)] <- 0
-govt_records_level_t1t2$usfws_prop_t2[is.na(govt_records_level_t1t2$usfws_prop_t2)] <- 0
-
-
+# 
+# #
+# # ## Join with counties at the records level for both t1 and t2
+# #setwd("~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/") # Justin's
+# setwd("/Users/kathrynmcconnell/Documents/GitHub/tribal_lands2/R_Analysis") # Katie's
+# records_level <- read_csv("change_scores_centroid_dist_records_level.csv")
+# 
+# # Join to t1 counties, rename columns so that they refer to t1, remove old columns (with old names)
+# govt_records_level_t1 <- left_join(records_level, govt4, by = c("FIPS_t1" = "FIPS")) %>% # join
+#   mutate(StateFP_t1 = STATEFP.x, # rename columns
+#          CountyFP_t1 = COUNTYFP.x,
+#          CountyNS_t1 = COUNTYNS,
+#          blm_prop_t1 = blm_prop,
+#          dod_prop_t1 = dod_prop,
+#          doe_prop_t1 = doe_prop,
+#          nps_prop_t1 = nps_prop,
+#          usfs_prop_t1 = usfs_prop,
+#          usfws_prop_t1 = usfws_prop,
+#          allfed_prop_t1 = allfed_prop) %>%
+#   select(-(STATEFP.x:allfed_prop)) # remove old column names
+# 
+# # Join federal lands to t2 counties, rename columns so that they refer to t2, remove old columns (with old names)
+# # This is the final dataframe (after replacing NA's with zeros below)
+# govt_records_level_t1t2 <- left_join(govt_records_level_t1, govt4, by = c("FIPS_t2" = "FIPS")) %>%
+#   mutate(StateFP_t2 = STATEFP.x, # rename columns
+#          CountyFP_t2 = COUNTYFP.x,
+#          CountyNS_t2 = COUNTYNS,
+#          blm_prop_t2 = blm_prop,
+#          dod_prop_t2 = dod_prop,
+#          doe_prop_t2 = doe_prop,
+#          nps_prop_t2 = nps_prop,
+#          usfs_prop_t2 = usfs_prop,
+#          usfws_prop_t2 = usfws_prop,
+#          allfed_prop_t2 = allfed_prop) %>%
+#   select(-(STATEFP.x:allfed_prop)) # remove old column names
+# 
+# # check to see how many columns were added in the join (should only be 10, the new mutated columns)
+# ncol(govt_records_level_t1t2) - ncol(govt_records_level_t1)
+# 
+# # Convert all federal land NA's to 0's (we know that absence of data for these columns means no govt presence)
+# # time 1
+# govt_records_level_t1t2$blm_prop_t1[is.na(govt_records_level_t1t2$blm_prop_t1)] <- 0
+# govt_records_level_t1t2$dod_prop_t1[is.na(govt_records_level_t1t2$dod_prop_t1)] <- 0
+# govt_records_level_t1t2$doe_prop_t1[is.na(govt_records_level_t1t2$doe_prop_t1)] <- 0
+# govt_records_level_t1t2$nps_prop_t1[is.na(govt_records_level_t1t2$nps_prop_t1)] <- 0
+# govt_records_level_t1t2$usfs_prop_t1[is.na(govt_records_level_t1t2$usfs_prop_t1)] <- 0
+# govt_records_level_t1t2$usfws_prop_t1[is.na(govt_records_level_t1t2$usfws_prop_t1)] <- 0
+# 
+# # time 2
+# govt_records_level_t1t2$blm_prop_t2[is.na(govt_records_level_t1t2$blm_prop_t2)] <- 0
+# govt_records_level_t1t2$dod_prop_t2[is.na(govt_records_level_t1t2$dod_prop_t2)] <- 0
+# govt_records_level_t1t2$doe_prop_t2[is.na(govt_records_level_t1t2$doe_prop_t2)] <- 0
+# govt_records_level_t1t2$nps_prop_t2[is.na(govt_records_level_t1t2$nps_prop_t2)] <- 0
+# govt_records_level_t1t2$usfs_prop_t2[is.na(govt_records_level_t1t2$usfs_prop_t2)] <- 0
+# govt_records_level_t1t2$usfws_prop_t2[is.na(govt_records_level_t1t2$usfws_prop_t2)] <- 0
+# 
+# 
 
 
 
