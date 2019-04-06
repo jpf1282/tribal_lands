@@ -100,3 +100,22 @@ no_join2 + yes_join2 == nrow(records_level) # should be TRUE if correct
 no_join_final <- anti_join(govt_records_level_t1, govt_records_level_t2) %>% nrow()
 yes_join_final <- semi_join(govt_records_level_t1, govt_records_level_t2) %>% nrow()
 no_join_final + yes_join_final == nrow(records_level) # should be TRUE if correct
+
+
+# Compare “all federal lands” proportion between Ben’s variable an --------
+
+# Import and clean new data
+allfed2 <- read_csv("Federalnew.csv") %>%
+  mutate(AllFed_Proportion = Federal_Area / County_Area) %>% # Make new proportion
+  select(-("Proportion")) %>% # Remove old proportion (wasn't between 0 - 1) 
+  mutate(GEOID = str_pad(GEOID, 5, pad = "0", side = "left")) # append leading zero where needed
+
+# Join new fed lands with old fed lands
+compare <- left_join(govt3, allfed2, by = c("FIPS" = "GEOID")) %>%
+  select(("allfed_prop"), ("AllFed_Proportion"), ("FIPS"))
+
+ggplot(data = compare) + 
+  geom_point(mapping = aes(x = allfed_prop, y = AllFed_Proportion))
+
+
+
