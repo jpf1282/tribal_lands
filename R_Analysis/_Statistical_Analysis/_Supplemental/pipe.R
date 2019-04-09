@@ -39,3 +39,9 @@ rmarkdown::render("R/03-analyze-precip-fullset.R",
                   output_file = paste0("analysis-", target, "-fullset.pdf"),
                   output_dir = pdf_path)
 
+
+target = "amen_rank"
+source("R/01-prep-data.R")
+rmarkdown::render("R/03-analyze-amenrank-fullset.R",
+                  output_file = paste0("analysis-", target, "-fullset.pdf"),
+                  output_dir = pdf_path)

@@ -3,15 +3,15 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(rlang)
-setwd('~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Maps_&_Viz/coxcombv3/') #set WD
+setwd('~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/_Maps_&_Viz/_Coxcomb/') #set WD
 load('~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/processed_data.RData')
-source('coxcFunction.R') #load function coxc
+coxcomb_tribes <- merged_data_record_all_long
+source('coxcFunction_v4.R') #load function coxc
 
-## CREATE NEW TRIBE DATA FOR ME TO WORK WITH FOR THIS COXCOMB
-#1. Change "Time 1" to time1, and make it a factor so I can plot
-coxcomb_tribes <- merged_data_tribe_long
-coxcomb_tribes$time[coxcomb_tribes$time == "Time 1"] <- "time 1"
-coxcomb_tribes$time[coxcomb_tribes$time == "Time 2"] <- "time 2"
+## [UNDER CONSTRUCTION]....CREATE NEW TRIBE DATA FOR ME TO WORK WITH FOR THIS COXCOMB
+# # coxcomb_tribes$time[coxcomb_tribes$time == "Time 1"] <- "time 1"
+# coxcomb_tribes$time[coxcomb_tribes$time == "Time 2"] <- "time 2"
+# This above is still under construction. I'll likely use this type of code for final visualizations. 
 
 # coxc creates coxcomb visualizations of variables for time and time2 either overlayed or side by side
 # the function first sorts "merged_data_record_all_long" by diff (time2-time1), time 1, or tribe, ascending or descending.
@@ -31,12 +31,16 @@ coxcomb_tribes$time[coxcomb_tribes$time == "Time 2"] <- "time 2"
   # 1: overlayed
   # 2: side by side
 ########################################## CALL FUNCTION ####################################
-coxc("n_unique_FIPS",sortdir="a",sortby=1,plottype=1) #call function
+coxc("precip",sortdir="a",sortby=1,plottype=2,ntribes1=1,ntribes2=15) #call function
+
+
+
 
 
 ###JUSTIN'S NOTES
   - does not have first option I requested
-  - can i create a new sortby, using diff as a percent. that way i can better compare tribes... i can just create new variables on my own.
+  - can i create a new sortby, using diff as a **percent change** that way i can better compare tribes... i can just create new variables on my own.
+  - fiddle with the opacity so its not as overlapping...
 
 #VARIABLES
 # > ls(merged_data_record_all_long)

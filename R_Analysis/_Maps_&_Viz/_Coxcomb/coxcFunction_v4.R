@@ -1,22 +1,22 @@
 
-coxc <- function(measure,sortdir,sortby,plottype){
+coxc <- function(measure,sortdir,sortby,plottype,ntribes1,ntribes2){
 
   if (sortby==1){sortvar<-"diff"} else if (sortby==2) {sortvar<-"time1"}else if (sortby==3) {sortvar="tribe"} 
   if(sortdir=="d"){srt<-paste0("desc(", sortvar,")")} else if (sortdir=="a") {srt<-sortvar}
 
 
-#create df of unique values by tribe, time, measure of interest, drop NA, sort by t1 or t2-t1 diff
-
-  uniqueFIPS <- coxcomb_tribes  %>% distinct_("tribe","time",.keep_all=TRUE) %>% mutate(time=gsub(" ","",time)) %>%
+  #create df of unique values by tribe, time, measure of interest, drop NA, sort by t1 or t2-t1 diff
+  
+  uniqueFIPS <- coxcomb_tribes %>% distinct_("tribe","time",.keep_all=TRUE) %>% mutate(time=gsub(" ","",time)) %>%
     select_("tribe","time",measure) %>% spread_("time",measure) %>% drop_na() %>% mutate(diff = time2-time1) %>% arrange(!!parse_expr(srt))
-
+  
   uniqueFIPS$tribe<-factor(uniqueFIPS$tribe,levels=uniqueFIPS$tribe[order(unlist(uniqueFIPS[sortvar]))]) #factorize for sorting
   uniqueFIPS$tribe_label<-str_wrap(uniqueFIPS$tribe, width=10) #create text wrapped variable
   uniqueFIPS$tribe_label<-factor(uniqueFIPS$tribe_label,levels=uniqueFIPS$tribe_label[order(unlist(uniqueFIPS[sortvar]))])  #factorize for sorting
   # ymax<-max(uniqueFIPS$time1, na.rm=TRUE) +.25*sd(uniqueFIPS$time1,na.rm=TRUE) #calculate ymax based on t1 - max value + .25 x standard deviation
-  uniqueFIPS<-uniqueFIPS[1:20,] #take first 25
+  uniqueFIPS<-uniqueFIPS[ntribes1:ntribes2,] #take first 25
 
-  print(head(uniqueFIPS,n=15))
+  print(head(uniqueFIPS,n=20))
 
   #rearrange df for coxcomb
   uniqueFIPS_melted<-uniqueFIPS %>% select(tribe, tribe_label,time1,time2) %>% gather('time','value',3:4)

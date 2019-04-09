@@ -10,6 +10,8 @@ if (target == "risk")
         yvars = c("Risk_t1", "Risk_t2", "risk_change_score")
 if (target == "precipitation")
         yvars = c("precip_t1", "precip_t2", "precip_change_score")
+if (target == "amen_rank")
+        yvars = c("amen_rank_t1", "amen_rank_t2", "amenity_change_score")
 df = df %>% select(tribe, yvars)
 
 # rename the variables:
