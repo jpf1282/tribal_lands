@@ -9,7 +9,7 @@
 knitr::opts_chunk$set(comment = "", tidy = F, echo = F, warning = F, 
                       message = F, fig.width = 8, fig.height = 6)
 
-# options(scipen = 999)
+# options(scipen = 0) # force scientific option
 
 #+ results = "asis"
 
