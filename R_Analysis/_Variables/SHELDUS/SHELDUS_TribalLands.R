@@ -62,7 +62,7 @@ shel3 <- group_by(shel2, `CountyFIPS`) %>%
 #   theme_bw() 
 
 # CREATE FINAL .CSV THAT WE'LL USE TO MERGE
-shel4 <- shel3 %>% select(shel_crop, shel_crop_pc, shel_prop, shel_prop_pc,
+shel4 <- shel3 %>% select(CountyFIPS, shel_crop, shel_crop_pc, shel_prop, shel_prop_pc,
                           shel_injur, shel_injur_pc, shel_fatal, shel_fatal_pc,
                           shel_dura, shel_yr_total)
-
+write_csv(shel4, "SHELDUS_to_merge_final.csv")

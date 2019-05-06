@@ -1,0 +1,731 @@
+---
+title: "Explore Difference in Crop Damage (and per Capita)"
+date: '2019-04-19'
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen=999)
+
+```
+
+## Setup Library
+Install these packages if neccessary.
+```{r project_setup, message = FALSE, warning = FALSE}
+
+library(readr)
+library(gamlss)
+library(tidyr)
+library(knitr)
+library(DT)
+library(dplyr)
+library(stringr)
+library(scales)
+library(broom)
+library(ggplot2)
+library(ggbeeswarm)
+library(MASS)
+library(pscl)
+library(boot)
+library(nlme)
+library(cplm)
+
+```
+
+## Data Preparation
+
+### Load Data
+Load the data imported, processed and saved from "data wrangle change score centroid and map data.R".
+```{r}
+
+load('~/Dropbox/__Papers_in_Progress/_Indian_Removal/_Data_and_R/x_Github/tribal_lands/R_Analysis/processed_data.RData')
+
+```
+
+### Prepare Data
+
+Keep distinct records within each time point only because keeping all pairwise records will inflate the number of observations in time 1 and 2.
+```{r}
+
+data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE)
+
+```
+
+Create data.frame to include only tribes with time 1 and 2 data.
+```{r}
+
+data_t1and2_long <- filter(data_long, tribe %in% tribes_time1and2_lst$tribe)
+
+```
+
+Convert time and tribe to factor for statistical modeling
+```{r}
+
+data_long <- data_long %>%
+  ungroup() %>%
+  mutate(tribe = factor(tribe),
+         time = factor(time))
+
+data_t1and2_long <- data_t1and2_long %>%
+  ungroup() %>%
+  mutate(tribe = factor(tribe),
+         time = factor(time))
+
+```
+
+
+**Check Data**
+
+First, confirm the data is correct, each tribe should have 2 summarized records in total, one for time 1 and one for time 2, so the resulted data.frame should has 0 row.
+```{r}
+t1and2_lst <- group_by(data_t1and2_long, tribe, time) %>% 
+  count() %>%
+  ungroup() %>%
+  group_by(tribe) %>%
+  count() %>%
+  filter(n < 2)
+
+nrow(t1and2_lst)
+```
+
+
+## Exploratory Analyses
+
+### All Tribes, including those with time 1 or time 2 data only
+
+### Plot Crop Damage by Time
+
+* The distribution of crop damage in time 1 and time 2 is skewed to the right and is zero-inflated with notable outliers.
+* The distirbution of crop damage is in general higher in time 1 compared to time 2.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+ggplot(data_long, aes(shel_crop, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge", bin = 70) +
+  theme_minimal()
+
+ggplot(data_long, aes(time, shel_crop, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+#### Look at those with crop damage only and 90th percentile cutoff
+
+* The distirbution of crop damage is in general higher in time 1 compared to time 2 for tribes in counties with crop damage only.
+
+```{r, message = FALSE, warning = FALSE}
+
+data_long_shel_crop_only <- filter(data_long, shel_crop > 0)
+
+ggplot(data_long_shel_crop_only, aes(shel_crop, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge") +
+  theme_minimal() +
+  xlim(0, quantile(data_long_shel_crop_only$shel_crop, c(.90), na.rm = TRUE))  
+
+ggplot(data_long_shel_crop_only, aes(time, shel_crop, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal() +
+  ylim(0, quantile(data_long_shel_crop_only$shel_crop, c(.90), na.rm = TRUE))
+
+```
+
+### Plot Crop Damage per capita by Time
+
+* The distribution of crop damage per capita in time 1 and time 2 is skewed to the right and is zero-inflated with notable outliers.
+* The distirbution of crop damage per capita is in general higher in time 1 compared to time 2.
+
+```{r, message = FALSE, warning = FALSE}
+
+ggplot(data_long, aes(shel_crop_pc, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge", bin = 70) +
+  theme_minimal()
+
+ggplot(data_long, aes(time, shel_crop_pc, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+#### Look at those with crop damage only and 90th percentile cutoff
+
+* The distirbution of crop damage per capita is in general higher in time 1 compared to time 2 for tribes in counties with crop damage only.
+
+```{r, message = FALSE, warning = FALSE}
+
+data_long_shel_crop_pc_only <- filter(data_long, shel_crop_pc > 0)
+
+ggplot(data_long_shel_crop_pc_only, aes(shel_crop_pc, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge") +
+  theme_minimal() +
+  xlim(0, quantile(data_long_shel_crop_pc_only$shel_crop_pc, c(.90), na.rm = TRUE))  
+
+ggplot(data_long_shel_crop_pc_only, aes(time, shel_crop_pc, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal() +
+  ylim(0, quantile(data_long_shel_crop_only$shel_crop_pc, c(.90), na.rm = TRUE))
+
+```
+
+### Tribes with both time 1 or time 2 data
+
+### Plot Crop Damage by Time
+
+* The distribution of crop damage in time 1 and time 2 is skewed to the right and is zero-inflated with notable outliers.
+* The distirbution of crop damage is in general higher in time 1 compared to time 2.
+
+```{r, message = FALSE, warning = FALSE}
+
+ggplot(data_t1and2_long, aes(shel_crop, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge", bin = 70) +
+  theme_minimal()
+
+ggplot(data_t1and2_long, aes(time, shel_crop, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+#### Look at only those with crop damage only and 90th percentile cutoff
+
+* The distirbution of crop damage is in general higher in time 1 compared to time 2 for tribes in counties with crop damage only.
+
+```{r, message = FALSE, warning = FALSE}
+
+data_t1and2_long_shel_crop_only <- filter(data_t1and2_long, shel_crop > 0)
+
+ggplot(data_t1and2_long_shel_crop_only, aes(shel_crop, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge") +
+  theme_minimal() +
+  xlim(0, quantile(data_t1and2_long_shel_crop_only$shel_crop, c(.90), na.rm = TRUE))
+  
+ggplot(data_t1and2_long_shel_crop_only, aes(time, shel_crop, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal() +
+  ylim(0, quantile(data_t1and2_long_shel_crop_only$shel_crop, c(.90), na.rm = TRUE))
+
+```
+
+### Plot Crop Damage per capita by Time
+
+* The distribution of crop damage per capita in time 1 and time 2 is skewed to the right and is zero-inflated with notable outliers.
+* The distirbution of crop damage per capita is in general higher in time 1 compared to time 2.
+
+```{r, message = FALSE, warning = FALSE}
+
+ggplot(data_t1and2_long, aes(shel_crop_pc, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge", bin = 70) +
+  theme_minimal()
+
+ggplot(data_t1and2_long, aes(time, shel_crop_pc, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+#### Look at those with crop damage only and 90th percentile cutoff
+
+* The distirbution of crop damage per capita is in general higher in time 1 compared to time 2 for tribes in counties with crop damage only.
+
+```{r, message = FALSE, warning = FALSE}
+
+data_t1and2_long_shel_crop_pc_only <- filter(data_t1and2_long, shel_crop_pc > 0)
+
+ggplot(data_t1and2_long_shel_crop_pc_only, aes(shel_crop_pc, fill = time)) +
+  facet_grid(rows = vars(time), scales = "free") +
+  geom_histogram(position = "dodge") +
+  theme_minimal() +
+  xlim(0, quantile(data_t1and2_long_shel_crop_pc_only$shel_crop_pc, c(.90), na.rm = TRUE))  
+
+ggplot(data_t1and2_long_shel_crop_pc_only, aes(time, shel_crop_pc, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal() +
+  ylim(0, quantile(data_t1and2_long_shel_crop_pc_only$shel_crop_pc, c(.90), na.rm = TRUE))
+
+```
+
+
+### Plot relationship between Time 1 and Time 2 Crop Damage at tribe level
+
+* Compute the mean and median values of each tribe at time 1 and time 2. Look at the median as well as the mean because the median is a robust measure of central tendency and extreme-value resistent while the mean is heavily influenced by outliers. 
+
+```{r, include = FALSE, echo = FALSE}
+
+# Function to add R-squared number to scatterplot
+lm_eqn = function(m) {
+
+  l <- list(a = format(coef(m)[1], digits = 2),
+      b = format(abs(coef(m)[2]), digits = 2),
+      r2 = format(summary(m)$r.squared, digits = 3));
+
+  if (coef(m)[2] >= 0)  {
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,l)
+  } else {
+    eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,l)    
+  }
+
+  as.character(as.expression(eq));                 
+}
+
+```
+
+#### Relationship between Time 1 and Time 2 Crop Damage
+
+* We found a medium positive linear relationships between time 1 and time 2 crop damage for mean (r = `r round(cor(merged_data_tribe$avg_shel_crop_t1, merged_data_tribe$avg_shel_crop_t2, use = "complete.obs"), 4)`) and a very small positive linear relationship for median (r = `r round(cor(merged_data_tribe$median_shel_crop_t1, merged_data_tribe$median_shel_crop_t2, use = "complete.obs"), 4)`)
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+ggplot(merged_data_tribe, aes(avg_shel_crop_t1, avg_shel_crop_t2)) +
+  geom_point() +
+  geom_smooth(method = 'lm',formula = y ~ x) +
+  theme_minimal() +
+  geom_text(aes(x = 300000, y = 1900000, label = invisible(lm_eqn(lm(avg_shel_crop_t1 ~ avg_shel_crop_t2, merged_data_tribe)))), parse = TRUE)
+
+ggplot(merged_data_tribe, aes(median_shel_crop_t1, median_shel_crop_t2)) +
+  geom_point() +
+  geom_smooth(method = 'lm',formula = y ~ x) +
+  theme_minimal() +
+  geom_text(aes(x = 300000, y = 1800000, label = invisible(lm_eqn(lm(median_shel_crop_t1 ~ median_shel_crop_t2, merged_data_tribe)))), parse = TRUE)
+
+```
+
+#### Relationship between Time 1 and Time 2 Crop Damage per Capita
+
+* We found a very small negative linear relationship between time 1 and time 2 crop damage per capita for mean (r = `r round(cor(merged_data_tribe$avg_shel_crop_pc_t1, merged_data_tribe$avg_shel_crop_pc_t2, use = "complete.obs"), 4)`) and median (r = `r round(cor(merged_data_tribe$median_shel_crop_pc_t1, merged_data_tribe$median_shel_crop_pc_t2, use = "complete.obs"), 4)`)
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+ggplot(merged_data_tribe, aes(avg_shel_crop_pc_t1, avg_shel_crop_pc_t2)) +
+  geom_point() +
+  geom_smooth(method = 'lm',formula = y ~ x) +
+  theme_minimal() +
+  geom_text(aes(x = 40, y = 7, label = invisible(lm_eqn(lm(avg_shel_crop_pc_t1 ~ avg_shel_crop_pc_t2, merged_data_tribe)))), parse = TRUE)
+
+ggplot(merged_data_tribe, aes(median_shel_crop_pc_t1, median_shel_crop_pc_t2)) +
+  geom_point() +
+  geom_smooth(method = 'lm',formula = y ~ x) +
+  theme_minimal() +
+  geom_text(aes(x = 4.5, y = 5.5, label = invisible(lm_eqn(lm(median_shel_crop_pc_t1 ~ median_shel_crop_pc_t2, merged_data_tribe)))), parse = TRUE)
+
+```
+
+
+## Test for Significant Difference
+
+### (1) Test for significant difference at the aggregate level
+
+* We applied three statistical models - Linear Mixed Model, Repeated Measure ANOVA, and Zero-inflated Compound Poisson Generalized Linear Model - to examine statistical significant difference between Time 1 and Time 2 crop damage and crop damage per capita scores.
+* The models, as applicable, are run using all records from all tribes and tribes with both time 1 and 2 data.
+* The model interpretation is based on the Zero-inflated Compound Poisson Generalized Linear Model, as this is the test most appropraite for the outcome. The Linear Mixed Model and Repeated Measure ANOVA results are shown for reference purposes.
+
+### Use all records
+
+Filter out NA outcomes
+```{r}
+
+model_data_long <- filter(data_long, !is.na(shel_crop))
+model_data_t1and2_long <- filter(data_t1and2_long, !is.na(shel_crop))
+
+```
+
+### Linear Mixed Model
+
+* Linear mixed model is a parametric test for comparing data when one or more of the independent variables should be model as a random effect because of variations by that variable.
+
+```{r}
+
+# Linear Mixed Model raw
+lme_model <- nlme::lme(shel_crop ~ time, data = model_data_long, random = ~1|tribe)
+
+summary(lme_model)
+anova(lme_model)
+
+```
+
+```{r}
+
+# Linear Mixed Model per capita
+lme_model <- nlme::lme(shel_crop_pc ~ time, data = model_data_long, random = ~1|tribe)
+
+summary(lme_model)
+anova(lme_model)
+
+```
+
+### Repeated Measure ANOVA
+
+* See Analysis below: Repeated Measure ANOVA can only be run with tribes with both time 1 and time 2 data.
+
+### Zero-Inflated Compound Poisson Generalized Linear Model
+
+* Zero-inflated Compound Poisson Generalized Linear Model is a parametric test for comparing continous metrics with excessive zeros. Unlike t-test or ANOVA, this test is appropriate for data that has a non-normally distribute positive scores with a large amount of zero score, such as the outcome crop damage and crop damage per capita. It is a two-part models. The first part evalutes whether the outcome is zero or non-zero, the second part models the positive distribution of the non-zero scores. Different predictors can be entered to predict the outcomes in these two-parts.
+* Time is entered as a predictor in both the zero-inflated and positive scores part of the modeling.
+
+```{r}
+
+# Zero-Inflated Compound Poisson Generalized Linear Model! raw
+zcpglm_model <- zcpglm(shel_crop ~ time || time, link = "log", data = model_data_long, optimizer = "nlminb")
+
+zcpglm_model_summary <- summary(zcpglm_model)
+
+```
+
+```{r}
+
+model_para <- coef(zcpglm_model_summary)
+
+mean_t1 <- round(mean(filter(data_long, time == "time 1")$shel_crop, na.rm = T), 3)
+mean_t2 <- round(mean(filter(data_long, time == "time 2")$shel_crop, na.rm = T), 3)
+sd_t1 <- round(sd(filter(data_long, time == "time 1")$shel_crop, na.rm = T), 3)
+sd_t2 <- round(sd(filter(data_long, time == "time 2")$shel_crop, na.rm = T), 3)
+
+pvalue <- round(model_para$tweedie[2,4], 3)
+zvalue <- round(model_para$tweedie[2,3], 3)
+parameter <- NA
+
+```
+
+**Interpretation**
+
+* At the aggregate level,  the difference in crop damage between time 1 (M = `r mean_t1`, SD = `r sd_t1`) and time 2 (M = `r mean_t2`, SD = `r sd_t2`) was not statistically signficant (z = `r zvalue`, `r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
+
+```{r}
+
+# Zero-Inflated Compound Poisson Generalized Linear Model! per capita
+zcpglm_model <- zcpglm(shel_crop_pc ~ time || time, link = "log", data = model_data_long, optimizer = "nlminb")
+
+zcpglm_model_summary <- summary(zcpglm_model)
+
+```
+
+```{r}
+
+model_para <- coef(zcpglm_model_summary)
+
+mean_t1 <- round(mean(filter(data_long, time == "time 1")$shel_crop, na.rm = T), 3)
+mean_t2 <- round(mean(filter(data_long, time == "time 2")$shel_crop, na.rm = T), 3)
+sd_t1 <- round(sd(filter(data_long, time == "time 1")$shel_crop, na.rm = T), 3)
+sd_t2 <- round(sd(filter(data_long, time == "time 2")$shel_crop, na.rm = T), 3)
+
+pvalue <- round(model_para$tweedie[2,4], 3)
+zvalue <- round(model_para$tweedie[2,3], 3)
+parameter <- NA
+
+```
+
+**Interpretation**
+
+* At the aggregate level, the difference in crop damage per capita between time 1 (M = `r mean_t1`, SD = `r sd_t1`) and time 2 (M = `r mean_t2`, SD = `r sd_t2`) was statistically signficant (z = `r zvalue`, `r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
+
+
+### Use only records where tribes have time 1 and 2 data
+
+### Linear Mixed Model
+
+```{r}
+
+# Linear Mixed Model raw
+lme_model <- nlme::lme(shel_crop ~ time, data = model_data_t1and2_long, random = ~1|tribe)
+
+summary(lme_model)
+anova(lme_model)
+
+```
+
+```{r}
+
+# Linear Mixed Model per capita
+lme_model <- nlme::lme(shel_crop_pc ~ time, data = model_data_t1and2_long, random = ~1|tribe)
+
+summary(lme_model)
+anova(lme_model)
+
+```
+
+### Repeated Measure ANOVA
+
+* Repeated Measure ANOVA can only be run with tribes with both time 1 and time 2 data.
+
+```{r}
+
+# Repeated Measure ANOVA raw
+aov_model <- aov(shel_crop ~ time + Error(tribe / time), data = model_data_t1and2_long)
+
+summary(aov_model)
+
+```
+
+```{r}
+
+# Repeated Measure ANOVA per capita
+aov_model <- aov(shel_crop_pc ~ time + Error(tribe / time), data = model_data_t1and2_long)
+
+summary(aov_model)
+
+```
+
+### Zero-Inflated Compound Poisson Generalized Linear Model
+
+* Zero-inflated Compound Poisson Generalized Linear Model is a parametric test for comparing continous metrics with excessive zeros. Unlike t-test or ANOVA, this test is appropriate for data that has a non-normally distribute positive scores with a large amount of zero score, such as the outcome crop damage and crop damage per capita. It is a two-part models. The first part evalutes whether the outcome is zero or non-zero, the second part models the positive distribution of the non-zero scores. Different predictors can be entered to predict the outcomes in these two-parts.
+* Time is entered as a predictor in both the zero-inflated and positive scores part of the modeling.
+
+```{r}
+
+# Zero-Inflated Compound Poisson Generalized Linear Model! raw
+zcpglm_model <- zcpglm(shel_crop ~ time || time, link = "log", data = model_data_t1and2_long, optimizer = "nlminb")
+
+zcpglm_model_summary <- summary(zcpglm_model)
+
+```
+
+```{r}
+
+model_para <- coef(zcpglm_model_summary)
+
+mean_t1 <- round(mean(filter(data_t1and2_long, time == "time 1")$shel_crop, na.rm = T), 3)
+mean_t2 <- round(mean(filter(data_t1and2_long, time == "time 2")$shel_crop, na.rm = T), 3)
+sd_t1 <- round(sd(filter(data_t1and2_long, time == "time 1")$shel_crop, na.rm = T), 3)
+sd_t2 <- round(sd(filter(data_t1and2_long, time == "time 2")$shel_crop, na.rm = T), 3)
+
+pvalue <- round(model_para$tweedie[2,4], 3)
+zvalue <- round(model_para$tweedie[2,3], 3)
+parameter <- NA
+
+```
+
+**Interpretation**
+
+* At the aggregate level for tribes with migration, the difference in crop damage area between time 1 (M = `r mean_t1`, SD = `r sd_t1`) and time 2 (M = `r mean_t2`, SD = `r sd_t2`) was not statistically signficant (z = `r zvalue`, `r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
+
+```{r}
+
+# Zero-Inflated Compound Poisson Generalized Linear Model! per capita
+zcpglm_model <- zcpglm(shel_crop_pc ~ time || time, link = "log", data = model_data_t1and2_long, optimizer = "nlminb")
+
+zcpglm_model_summary <- summary(zcpglm_model)
+
+```
+
+
+```{r}
+
+model_para <- coef(zcpglm_model_summary)
+
+mean_t1 <- round(mean(filter(data_t1and2_long, time == "time 1")$shel_crop, na.rm = T), 3)
+mean_t2 <- round(mean(filter(data_t1and2_long, time == "time 2")$shel_crop, na.rm = T), 3)
+sd_t1 <- round(sd(filter(data_t1and2_long, time == "time 1")$shel_crop, na.rm = T), 3)
+sd_t2 <- round(sd(filter(data_t1and2_long, time == "time 2")$shel_crop, na.rm = T), 3)
+
+pvalue <- round(model_para$tweedie[2,4], 3)
+zvalue <- round(model_para$tweedie[2,3], 3)
+parameter <- NA
+
+```
+
+**Interpretation**
+
+* At the aggregate level for tribes with migration, the difference in crop damage area between time 1 (M = `r mean_t1`, SD = `r sd_t1`) and time 2 (M = `r mean_t2`, SD = `r sd_t2`) was statistically signficant (z = `r zvalue`, `r ifelse(pvalue < .001, "p < .001", paste0("p = ", pvalue))`).
+
+
+### (2) Test for significant difference at tribe level
+
+* At the tribe level, only the Zero-Inflated Compound Poisson Generalized Linear Model is run.
+
+```{r, message = FALSE, warning = FALSE}
+
+tribe_with_dif <- filter(merged_data_tribe, avg_shel_crop_change_score > 0) %>% group_by(tribe) %>% count()
+
+no_test <- nrow(tribe_with_dif)
+
+```
+
+This can only be tested with the `r nrow(tribes_time1and2_lst)` tribes where migrations occured. Furthermore, only tribes where crop damage have changed between time points and with more than one data point at each time point can their differences be tested for statistical significance. This reduce the number of tribes from `r nrow(tribes_time1and2_lst)` to `r no_test`.
+
+### Run Zero-Inflated Compound Poisson Generalized Linear Model in Batch
+
+* Run Zero-Inflated Compound Poisson Generalized Linear Model in batch using group_by and do at the tribe level.
+* Include a try call to catch error.
+* Format the results into a data.frame.
+* Replace NA estimate with all NA for that comparison.
+
+```{r, eval = FALSE}
+
+model <- group_by(model_data_t1and2_long, tribe) %>%
+do(tryCatch(
+  {as.data.frame((coef(summary(invisible(zcpglm(shel_crop ~ time || time, link = "log", data = ., optimizer = "nlminb")))))$tweedie)},
+  error = function(e) {data.frame(Estimate = NA)}
+)) # keep only tweedie time component
+
+model <- group_by(model, tribe) %>% 
+  filter(row_number() %% 2 == 0) %>%
+  rename(p.value = `Pr(>|z|)`)
+
+```
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, include = FALSE}
+
+sink("~temp.txt")
+
+model <- group_by(model_data_t1and2_long, tribe) %>%
+do(tryCatch(
+  {as.data.frame((coef(summary(invisible(zcpglm(shel_crop ~ time || time, link = "log", data = ., optimizer = "nlminb")))))$tweedie)},
+  error = function(e) {data.frame(Estimate = NA)}
+)) # keep only tweedie time component
+
+sink(NULL)
+
+model <- group_by(model, tribe) %>% 
+  filter(row_number() %% 2 == 0) %>%
+  rename(p.value = `Pr(>|z|)`)
+
+```
+
+```{r, eval = FALSE}
+
+model_pc <- group_by(model_data_t1and2_long, tribe) %>%
+do(tryCatch(
+  {as.data.frame((coef(summary(zcpglm(shel_crop_pc ~ time || time, link = "log", data = ., optimizer = "nlminb"))))$tweedie)},
+  error = function(e) {data.frame(Estimate = NA)}
+)) # keep only tweedie time component
+
+model_pc <- group_by(model_pc, tribe) %>% 
+  filter(row_number() %% 2 == 0) %>%
+  rename(p.value = `Pr(>|z|)`)
+
+```
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, include = FALSE}
+
+# Zero-Inflated Compound Poisson Generalized Linear Model! per Capita
+# zcpglm_model <- zcpglm(shel_crop ~ time || time, link = "log", data = model_data_t1and2_long, optimizer = "nlminb")
+# 
+# zcpglm_model_summary <- summary(zcpglm_model)
+
+sink("~temp.txt")
+
+model_pc <- group_by(model_data_t1and2_long, tribe) %>%
+do(tryCatch(
+  {as.data.frame((coef(summary(zcpglm(shel_crop_pc ~ time || time, link = "log", data = ., optimizer = "nlminb"))))$tweedie)},
+  error = function(e) {data.frame(Estimate = NA)}
+)) # keep only tweedie time component
+
+sink(NULL)
+
+model_pc <- group_by(model_pc, tribe) %>% 
+  filter(row_number() %% 2 == 0) %>%
+  rename(p.value = `Pr(>|z|)`)
+
+```
+
+Calculate number of test based only on tribes where there is non-zero difference and sufficient data point in crop damage between time 1 and 2.
+
+```{r}
+
+no_test <- nrow(filter(model, !is.na(p.value)))
+
+```
+
+* Create sig column to flag statistical significance results. 
+* p-value cutoff is adjusted to control for Type I error due to multiple comparisons using Bonferroni correction (p value threshold = .05 / number of tests or `r no_test`), adjusted p-value threshold = `r .5/no_test`.
+
+```{r, message = FALSE, warning = FALSE}
+
+model <- model %>%
+  mutate(sig = ifelse(p.value < .05 / no_test, "yes", "no"))
+
+model_pc <- model_pc %>%
+  mutate(sig = ifelse(p.value < .05 / no_test, "yes", "no"))
+
+```
+
+* Add damage crop, damage crop per capita, distance, and no of unique FIPS to help with interpretation
+* Rename some variables for prettier column headers
+
+```{r}
+
+results_df <- inner_join(model, merged_data_tribe, by = "tribe") %>%
+  mutate(`Avg Diff Damage Crop` = avg_shel_crop_t2 - avg_shel_crop_t1,
+         `Avg Diff Damage Crop per Capita` = avg_shel_crop_pc_t2 - avg_shel_crop_pc_t1) %>%
+  dplyr::select(tribe, sig, p.value, `Avg Diff Damage Crop`, avg_shel_crop_t1, avg_shel_crop_t2, `Avg Diff Damage Crop per Capita`, avg_shel_crop_pc_t1, avg_shel_crop_pc_t2, n_unique_FIPS_t1, n_unique_FIPS_t2, mid_dist) %>%
+  arrange(p.value) %>%
+  rename(
+    `Avg Damage Crop T1` = avg_shel_crop_t1,
+    `Avg Damage Crop T2` = avg_shel_crop_t2,
+    `Avg Damage Crop per Capita T1` = avg_shel_crop_pc_t1,
+    `Avg Damage Crop per Capita T2` = avg_shel_crop_pc_t2,
+    `Unique FIPS T1` = n_unique_FIPS_t1,
+    `Unique FIPS T2` = n_unique_FIPS_t2,
+    `Mid Distance` = mid_dist)
+
+model_pc_tojoin <- select(model_pc, tribe, sig, p.value) %>%
+  rename(`sig (per capita)` = sig,
+         `p.value (per capita)` = p.value)
+
+results_df <- inner_join(results_df, model_pc_tojoin, by = "tribe") %>%
+  select(tribe, sig, p.value, `sig (per capita)`, `p.value (per capita)`, everything())
+
+```
+
+
+### Results Table 
+#### Ordered by p value in ascending order
+
+```{r}
+
+datatable(results_df,
+          filter = "top",
+          options = list(pageLength = 20)) %>%
+   formatRound(columns = c('p.value', 'p.value (per capita)'), digits = 3) %>%
+   formatRound(columns = c('Avg Diff Damage Crop', 'Avg Damage Crop T1', 'Avg Damage Crop T2', 'Avg Diff Damage Crop per Capita', 'Avg Damage Crop per Capita T1', 'Avg Damage Crop per Capita T2', 'Mid Distance'), digits = 5)
+
+```
+
+```{r}
+
+b_sig_tribe_lst <- filter(results_df, sig == "yes") %>%
+  dplyr::select(tribe)
+sig_tribe_lst <- filter(results_df, p.value < .05) %>%
+  dplyr::select(tribe)
+
+b_pc_sig_tribe_lst <- filter(results_df, `sig (per capita)` == "yes") %>%
+  dplyr::select(tribe)
+pc_sig_tribe_lst <- filter(results_df, `p.value (per capita)` < .05) %>%
+  dplyr::select(tribe)
+
+```
+
+**Interpretation**
+
+* The mean crop damage comparisons for `r nrow(b_sig_tribe_lst)` tribes (`r b_sig_tribe_lst$tribe`) achieve statistical significance when the Bonferroni correction is used.
+* The mean crop damage per capita comparisons for `r nrow(b_pc_sig_tribe_lst)` tribes (`r b_pc_sig_tribe_lst$tribe`) achieve statistical significance when the Bonferroni correction is used.
+* The tests have low statistical power to detect differences given the number of observations at time 2 is much smaller than time 1.
+* If Bonferroni correction is not used, crop damage was significantly differ between time 1 and 2 for `r nrow(sig_tribe_lst)` tribes :(`r sig_tribe_lst$tribe`).
+* If Bonferroni correction is not used, crop damage per capita was significantly differ between time 1 and 2 for `r nrow(pc_sig_tribe_lst)` tribes :(`r pc_sig_tribe_lst$tribe`).
+* Results with NA p values are from tribes where there isn't sufficient data points in both time point to perform the planned statistical tests.
+
+**Overall Interpretation**
+
+* Overall, statistically significant difference were found at the aggregate level when data for all tribes and tribes with migrations were analyzed on the outcome crop damage per capita. The difference however was not statistically significant when we examined the crop damage raw scores.
+
+* At the tribe level, when correction for multiple comparisons was made, crop damage for `r nrow(b_sig_tribe_lst)` tribes were found to be statistically differ between time 1 and time 2. 
+
+* At the tribe level, when correction for multiple comparisons was made, crop damage per capita for `r nrow(b_pc_sig_tribe_lst)` tribes were found to be statistically differ between time 1 and time 2. 
+
+* The lack of significant differences at the tribe level could be attributed to the low statistical power arises from the small number of observations at time 2. In some cases, there is only 1 data point in time 2 or time 1.

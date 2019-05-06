@@ -31,7 +31,7 @@ source('coxcFunction_v4.R') #load function coxc
   # 1: overlayed
   # 2: side by side
 ########################################## CALL FUNCTION ####################################
-coxc("precip",sortdir="a",sortby=1,plottype=2,ntribes1=1,ntribes2=15) #call function
+coxc("shel_injur",sortdir="a",sortby=1,plottype=2,ntribes1=1,ntribes2=15) #call function
 
 
 
@@ -43,6 +43,9 @@ coxc("precip",sortdir="a",sortby=1,plottype=2,ntribes1=1,ntribes2=15) #call func
   - fiddle with the opacity so its not as overlapping...
 
 #VARIABLES
-# > ls(merged_data_record_all_long)
-# [1] "amen_rank"     "avg_lat"       "avg_lon"       "built_env"     "crsi"          "FIPS"          "gas_avg"       "governance"    "ID"            "lat"           "lon"          
-# [12] "mid_lat"       "mid_lon"       "n_unique_FIPS" "natural_env"   "oil_avg"       "precip"        "risk"          "society"       "time"          "tribe"      
+> ls(merged_data_record_all_long)
+[1] "amen_rank"     "avg_lat"       "avg_lon"       "built_env"     "crsi"          "FIPS"          "gas_avg"       "governance"    "ID"           
+[10] "lat"           "lon"           "mid_lat"       "mid_lon"       "n_unique_FIPS" "natural_env"   "oil_avg"       "p_all"         "p_blm"        
+[19] "p_dod"         "p_doe"         "p_nps"         "p_usfs"        "p_usfws"       "precip"        "risk"          "shel_crop"     "shel_crop_pc" 
+[28] "shel_dura"     "shel_fatal"    "shel_fatal_pc" "shel_injur"    "shel_injur_pc" "shel_prop"     "shel_prop_pc"  "shel_yr_total" "society"      
+[37] "time"          "tribe"  
