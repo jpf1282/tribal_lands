@@ -35,7 +35,7 @@ library(ggbeeswarm)
 Load the data imported, processed and saved from "data wrangle change score centroid and map data.R".
 ```{r}
 
-load("processed_data v2.RData")
+load("R_Analysis/processed_data.RData")
 
 ```
 
@@ -253,7 +253,19 @@ aov_model <- aov(gas ~ time + Error(tribe / time), data = gas_data_long)
 
 summary(aov_model)
 
+
+lm_model <- lm(gas ~ time, 
+               weights = wgt,
+               data = gas_data_long %>%
+                 group_by(tribe) %>%
+                 mutate(wgt=1/n()) %>%
+                 ungroup())
+
+lmtest::coeftest(lm_model,vcovCL(lm_model,cluster = ~tribe))
+
 ```
+
+* Using linear regression and clustering standard errors to account for within tribe correlation, the difference isn't significant
 
 ```{r}
 
