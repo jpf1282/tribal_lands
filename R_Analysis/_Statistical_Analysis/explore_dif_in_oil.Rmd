@@ -35,7 +35,7 @@ library(ggbeeswarm)
 Load the data imported, processed and saved from "data wrangle change score centroid and map data.R".
 ```{r}
 
-load("processed_data v2.RData")
+load("R_Analysis/processed_data.RData")
 
 ```
 
@@ -78,7 +78,7 @@ nrow(t1and2_lst)
 
 ```{r, message = FALSE, warning = FALSE}
 
-ggplot(data_long, aes(oil_avg, fill = time)) +
+ggplot(data_long %>% filter(oil_avg>0), aes(log(oil_avg), fill = time)) +
   facet_grid(rows = vars(time), scales = "free") +
   geom_histogram(position = "dodge") +
   theme_minimal()
@@ -165,8 +165,11 @@ ggplot(data_t1and2_long_oil_only, aes(time, oil_avg, colour = time)) +
 ### Use all records
 
 ```{r}
+isnt_out_z <- function(x, thres = 3, na.rm = TRUE) {
+  abs(x - mean(x, na.rm = na.rm)) <= thres * sd(x, na.rm = na.rm)
+}
 
-ttest_model <- t.test(oil_avg ~ time, data = data_long, paired = FALSE)
+ttest_model <- t.test(oil_avg ~ time, data = data_long %>% filter(isnt_out_z(oil_avg)), paired = FALSE)
 
 ttest_model
 
@@ -199,6 +202,17 @@ ttest_model <- t.test(oil_avg ~ time, data = data_t1and2_long, paired = FALSE)
 
 ttest_model
 
+library(weights)
+wtd.data <- data_t1and2_long %>%
+                 group_by(tribe) %>%
+                 mutate(wgt=1/n()) %>%
+                 ungroup()
+wtd.ttest <- wtd.t.test(x = wtd.data$oil_avg[wtd.data$time=="time 1"],
+                        y = wtd.data$oil_avg[wtd.data$time=="time 2"],
+                        weight = wtd.data$wgt[wtd.data$time=="time 1"],
+                        weighty = wtd.data$wgt[wtd.data$time=="time 2"],
+                        bootse = T)
+wtd.ttest
 ```
 
 ```{r}
@@ -249,6 +263,15 @@ oil_data_long <- gather(oil_data_wide, "time", "oil", -ID, -tribe, -time, -oil_c
 aov_model <- aov(oil ~ time + Error(tribe / time), data = oil_data_long)
 
 summary(aov_model)
+
+lm_model <- lm(oil ~ time , 
+               weights = wgt,
+               data = oil_data_long %>%
+                 group_by(tribe) %>%
+                 mutate(wgt=1/n()) %>%
+                 ungroup())
+library(sandwich)
+lmtest::coeftest(lm_model,vcovCL(lm_model,cluster = ~tribe))
 
 ```
 

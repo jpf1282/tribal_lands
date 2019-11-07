@@ -208,6 +208,14 @@ aov_model <- aov(risk ~ time + Error(tribe / time), data = risk_data_long)
 
 summary(aov_model)
 
+lm_model <- lm(risk ~ time , 
+               weights = wgt,
+               data = risk_data_long %>%
+                 group_by(tribe) %>%
+                 mutate(wgt=1/n()) %>%
+                 ungroup())
+library(sandwich)
+lmtest::coeftest(lm_model,vcovCL(lm_model,cluster = ~tribe))
 ```
 
 ```{r}

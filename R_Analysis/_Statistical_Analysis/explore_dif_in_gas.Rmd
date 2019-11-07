@@ -254,13 +254,13 @@ aov_model <- aov(gas ~ time + Error(tribe / time), data = gas_data_long)
 summary(aov_model)
 
 
-lm_model <- lm(gas ~ time, 
+lm_model <- lm(gas ~ time , 
                weights = wgt,
                data = gas_data_long %>%
                  group_by(tribe) %>%
                  mutate(wgt=1/n()) %>%
                  ungroup())
-
+library(sandwich)
 lmtest::coeftest(lm_model,vcovCL(lm_model,cluster = ~tribe))
 
 ```

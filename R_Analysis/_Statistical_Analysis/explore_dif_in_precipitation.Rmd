@@ -35,7 +35,7 @@ library(ggbeeswarm)
 Load the data imported, processed and saved from "data wrangle change score centroid and map data.R".
 ```{r}
 
-load("processed_data v2.RData")
+load("R_Analysis/processed_data.RData")
 
 ```
 
@@ -208,6 +208,14 @@ aov_model <- aov(precip ~ time + Error(tribe / time), data = precip_data_long)
 
 summary(aov_model)
 
+lm_model <- lm(precip ~ time , 
+               weights = wgt,
+               data = precip_data_long %>%
+                 group_by(tribe) %>%
+                 mutate(wgt=1/n()) %>%
+                 ungroup())
+library(sandwich)
+lmtest::coeftest(lm_model,vcovCL(lm_model,cluster = ~tribe))
 ```
 
 ```{r}
