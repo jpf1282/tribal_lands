@@ -1,0 +1,282 @@
+---
+title: "All Results"
+author: "Jude Bayham"
+date: "December 19, 2019"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen=999)
+
+```
+
+# Setup
+Install these packages if neccessary.
+```{r project_setup, message = FALSE, warning = FALSE, include=FALSE}
+
+library(readr)
+library(gamlss)
+library(tidyr)
+library(knitr)
+library(DT)
+library(dplyr)
+library(stringr)
+library(scales)
+library(broom)
+library(ggplot2)
+library(ggbeeswarm)
+library(MASS)
+library(pscl)
+library(boot)
+library(nlme)
+library(cplm)
+library(conflicted)
+library(fixest)
+library(sjPlot)
+
+conflict_prefer("filter", "dplyr")
+
+load("../processed_data.RData")
+
+
+###############################################
+#Doesn't work yet
+# model.run.t1andt2 <- function(dep.var){
+#   
+#   # OLS
+#   lm_model <- feols(formula(str_c(dep.var," ~ time")),
+#                     data = data_t1and2_long)
+#   lmw_model <- feols(formula(str_c(dep.var," ~ time")), 
+#                      data = data_t1and2_long, weights = ~wgt)
+#   fe_model <- feols(formula(str_c(dep.var," ~ time|tribe")), 
+#                     data = data_t1and2_long)
+#   few_model <- feols(formula(str_c(dep.var," ~ time|tribe")), 
+#                      data = data_t1and2_long, weights = ~wgt)
+# 
+# 
+#   # Linear Mixed Model
+#   lme_model <- nlme::lme(formula(str_c(dep.var," ~ time")), 
+#                          data = data_t1and2_long %>% drop_na(one_of(dep.var),time,tribe), 
+#                          random = ~1|tribe)
+#   
+#   lmew_model <- nlme::lme(formula(str_c(dep.var," ~ time")), 
+#                           data = data_t1and2_long %>% drop_na(one_of(dep.var),time,tribe),
+#                           random = ~1|tribe,
+#                           weights = ~wgt)
+#   
+#   return(list(lm_model,lmw_model,fe_model,few_model,lme_model,lmew_model))
+# }
+# 
+# test <- model.run.t1andt2(dep.var = "h_100_hist")
+# esttable(test[1:4])
+# tab_model(test[[5]])
+
+```
+
+
+Setting up two datasets: 1) the full data including tribes that may not be present in both time periods, and 2) subset of observations where tribes were present in both periods.
+```{r, message = FALSE, warning = FALSE, include=FALSE}
+#Constructing datasets
+data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE) %>%
+  ungroup() %>%
+  mutate(tribe = factor(tribe),
+         time = factor(time)) 
+
+data_t1and2_long <- filter(data_long, tribe %in% tribes_time1and2_lst$tribe)
+
+#Constructing weights
+data_long <- data_long %>%
+  group_by(tribe,time) %>%
+  summarise(wgt=1/n()) %>%
+  ungroup() %>%
+  left_join(data_long,
+            .,
+            by=c("tribe","time"))
+
+data_t1and2_long <- data_t1and2_long %>%
+  group_by(tribe,time) %>%
+  summarise(wgt=1/n()) %>%
+  ungroup() %>%
+  left_join(data_t1and2_long,
+            .,
+            by=c("tribe","time"))
+  
+```
+
+# Climate Variables
+
+We analyze the difference between climate variables in the pre-migration lands to the post-migration lands.  We focus on heat index, drought, annual precipitation, and wildfire hazard potential.
+
+## Heat
+
+We begin with the heat index, which counts the number of days per year expected to exceed 100 F.  The following figures display the distribution of days exceeding 100 F in the pre-migration (time 1) and the post-migration (time 2).   
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, h_100_hist, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, h_100_hist, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+We employ a battery of statistical methods to assess the difference between the number of heat days across the historical (time 1) and the present (time 2) CCEs.  The first column of Table S1 presents the results of an OLS regression of heat day CCEs on a dummy indicating present-day areas.  
+
+The present-day and historical ranges of tribes vary within the dataset.  Tribes with larger ranges therefore have more weight in a statistical analysis of the data.  We test the robustness of our analysis to tribe population and range by creating inverse weights.  For example, if the historical area of a tribe covered 100 CCEs, then each CCE would have a weight of 1/100 in the regression.  The weighted regression in column 2 provides an estimate of the mean difference across tribes controlling for the weight of tribes that covered more CCEs.
+
+Lastly, there may be unobserved factors specific to the tribe that influence the results.  We control for tribe-specific factors using two related approaches: 1) a linear fixed-effects model and 2) a linear random-effects model.  For each model, we estimate a weighted and unweighted regression.  Standard errors in all specifications are clustered at the tribe level and are robust to heteroskedasticity and serial correlation within a tribe.  
+
+```{r h_100_hist, message = FALSE, warning = FALSE, echo = FALSE}
+
+# OLS
+lm_model <- feols(h_100_hist ~ time, data = data_t1and2_long)
+lmw_model <- feols(h_100_hist ~ time, data = data_t1and2_long, weights = ~wgt)
+fe_model <- feols(h_100_hist ~ time|tribe, data = data_t1and2_long)
+few_model <- feols(h_100_hist ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
+
+esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
+
+confint(lm_model)
+
+# Linear Mixed Model
+lme_model <- nlme::lme(h_100_hist ~ time, data = data_t1and2_long %>% drop_na(h_100_hist,time,tribe), random = ~1|tribe)
+lmew_model <- nlme::lme(h_100_hist ~ time, data = data_t1and2_long %>% drop_na(h_100_hist,time,tribe), random = ~1|tribe,weights = ~wgt)
+
+tab_model(lme_model,lmew_model)
+```
+
+The results indicate that the present-day locations experience 2.54 (CI: 1.98-3.10) more 100 F days than the historic locations.  We find the lowest estimate in the weighted random-effects model, 2.07 (CI: 0.31-3.83)) and the highest in the unweighted fixed-effects model, 3.31 (CI: 1.86-3.35).  These results suggest a robust increase in the number of 100 F days in present-day CCEs relative to historical CCEs
+
+## Drought
+
+We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought.  
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, drt_median, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, drt_median, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r drt_median, message = FALSE, warning = FALSE, echo = FALSE}
+
+# OLS
+lm_model <- feols(drt_median ~ time, data = data_t1and2_long)
+lmw_model <- feols(drt_median ~ time, data = data_t1and2_long, weights = ~wgt)
+fe_model <- feols(drt_median ~ time|tribe, data = data_t1and2_long)
+few_model <- feols(drt_median ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
+
+esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
+
+
+# Linear Mixed Model
+lme_model <- nlme::lme(drt_median ~ time, data = data_t1and2_long %>% drop_na(drt_median,time,tribe), random = ~1|tribe)
+lmew_model <- nlme::lme(drt_median ~ time, data = data_t1and2_long %>% drop_na(drt_median,time,tribe), random = ~1|tribe,weights = ~wgt)
+
+tab_model(lme_model,lmew_model)
+```
+
+
+
+
+
+
+## Precipitation
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, precip, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, precip, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r precip, message = FALSE, warning = FALSE, echo = FALSE}
+
+# OLS
+lm_model <- feols(precip ~ time, data = data_t1and2_long)
+lmw_model <- feols(precip ~ time, data = data_t1and2_long, weights = ~wgt)
+fe_model <- feols(precip ~ time|tribe, data = data_t1and2_long)
+few_model <- feols(precip ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
+
+esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
+
+
+# Linear Mixed Model
+lme_model <- nlme::lme(precip ~ time, data = data_t1and2_long %>% drop_na(precip,time,tribe), random = ~1|tribe)
+lmew_model <- nlme::lme(precip ~ time, data = data_t1and2_long %>% drop_na(precip,time,tribe), random = ~1|tribe,weights = ~wgt)
+
+tab_model(lme_model,lmew_model)
+```
+
+
+
+
+## Wildfire Hazard Potential
+
+We use CCE median rather than mean to reduce the influence of outliers.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, fire_median, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, fire_median, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r fire_median, message = FALSE, warning = FALSE, echo = FALSE}
+
+# OLS
+lm_model <- feols(fire_median ~ time, data = data_t1and2_long)
+lmw_model <- feols(fire_median ~ time, data = data_t1and2_long, weights = ~wgt)
+fe_model <- feols(fire_median ~ time|tribe, data = data_t1and2_long)
+few_model <- feols(fire_median ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
+
+esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
+
+
+# Linear Mixed Model
+lme_model <- nlme::lme(fire_median ~ time, data = data_t1and2_long %>% drop_na(fire_median,time,tribe), random = ~1|tribe)
+lmew_model <- nlme::lme(fire_median ~ time, data = data_t1and2_long %>% drop_na(fire_median,time,tribe), random = ~1|tribe,weights = ~wgt)
+
+tab_model(lme_model,lmew_model)
+```
+
+Mixed evidence
