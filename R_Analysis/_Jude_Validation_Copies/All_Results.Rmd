@@ -22,6 +22,7 @@ library(tidyr)
 library(knitr)
 library(DT)
 library(dplyr)
+library(purrr)
 library(stringr)
 library(scales)
 library(broom)
@@ -35,43 +36,118 @@ library(cplm)
 library(conflicted)
 library(fixest)
 library(sjPlot)
+library(stargazer)
+library(clubSandwich)
 
 conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
 
 load("../processed_data.RData")
 
+#Function to coerce fixest object into stargazer table
+fixest_to_coeftest <- function(fixest.object){
+  require(fixest)
+  #Check if arg1 is fixest class
+  if(!class(fixest.object)=="fixest"){
+    stop("Not a fixest object")
+  }
+  
+  #Extract the coefficient table
+  df <- fixest.object$coeftable 
+  
+  if(length(fixest.object$obsRemoved)>0){
+    cluster.var <- data_t1and2_long$tribe[-fixest.object$obsRemoved]
+  } else {
+    cluster.var <- data_t1and2_long$tribe
+  }
+  
+  
+  df.mod <- df %>%
+    mutate(se = as.numeric(sqrt(diag(vcov(fixest.object,cluster=cluster.var)))),
+           stat = Estimate/se,
+           p = 2*pt(-abs(stat),df=nobs(fixest.object)-fixest.object$nparams)) %>%
+    dplyr::select(Estimate,se,stat,p)
+  
+  
+  #Coerce dataframe into matrix
+  coeftest.object <- as.matrix(df.mod)
+  
+  #Capture variable names from df and rename columns to conform to coeftest
+  new_names <- list(rownames(df),
+                    c("Estimate","Std. Error","t value","Pr(>|t|)"))
+  
+  #Assign names
+  dimnames(coeftest.object) <- new_names
+  
+  #re-class to coeftest
+  class(coeftest.object) <- 'coeftest'
+  
+  return(coeftest.object)
+  
+}
+
+#Function to coerce lme object into stargazer table
+lme_to_coeftest <- function(lme.object){
+  require(clubSandwich)
+  #Check if arg1 is fixest class
+  if(!class(lme.object)=="lme"){
+    stop("Not an lme object")
+  }
+  
+  #Extract the coefficient table
+  df <- coef_test(lme.object,
+                  vcov = vcovCR(lme.object,
+                                type="CR2"))
+  
+  #Coerce dataframe into matrix
+  coeftest.object <- as.matrix(df[,c(1,2,3,5)])
+  
+  #Capture variable names from df and rename columns to conform to coeftest
+  new_names <- list(rownames(df),
+                    c("Estimate","Std. Error","t value","Pr(>|t|)"))
+  
+  #Assign names
+  dimnames(coeftest.object) <- new_names
+  
+  #re-class to coeftest
+  class(coeftest.object) <- 'coeftest'
+  
+  return(coeftest.object)
+  
+}
 
 ###############################################
-#Doesn't work yet
-# model.run.t1andt2 <- function(dep.var){
-#   
-#   # OLS
-#   lm_model <- feols(formula(str_c(dep.var," ~ time")),
-#                     data = data_t1and2_long)
-#   lmw_model <- feols(formula(str_c(dep.var," ~ time")), 
-#                      data = data_t1and2_long, weights = ~wgt)
-#   fe_model <- feols(formula(str_c(dep.var," ~ time|tribe")), 
-#                     data = data_t1and2_long)
-#   few_model <- feols(formula(str_c(dep.var," ~ time|tribe")), 
-#                      data = data_t1and2_long, weights = ~wgt)
-# 
-# 
-#   # Linear Mixed Model
-#   lme_model <- nlme::lme(formula(str_c(dep.var," ~ time")), 
-#                          data = data_t1and2_long %>% drop_na(one_of(dep.var),time,tribe), 
-#                          random = ~1|tribe)
-#   
-#   lmew_model <- nlme::lme(formula(str_c(dep.var," ~ time")), 
-#                           data = data_t1and2_long %>% drop_na(one_of(dep.var),time,tribe),
-#                           random = ~1|tribe,
-#                           weights = ~wgt)
-#   
-#   return(list(lm_model,lmw_model,fe_model,few_model,lme_model,lmew_model))
-# }
-# 
-# test <- model.run.t1andt2(dep.var = "h_100_hist")
-# esttable(test[1:4])
-# tab_model(test[[5]])
+#Function that runs all specifications, clusters se and returns coeftest objects for printing with stargazer
+model.run.t1andt2 <- function(dep.var){
+
+  dep.var <- dep.var
+  # Fixest models
+  model.shell <- list()
+  model.shell$lm <- feols(formula(str_c(dep.var," ~ time")),
+                    data = data_t1and2_long)
+  model.shell$lmw <- feols(formula(str_c(dep.var," ~ time")),
+                     data = data_t1and2_long, weights = ~wgt)
+  model.shell$fem <- feols(formula(str_c(dep.var," ~ time|tribe")),
+                    data = data_t1and2_long)
+  model.shell$femw <- feols(formula(str_c(dep.var," ~ time|tribe")),
+                     data = data_t1and2_long, weights = ~wgt)
+  
+  # Linear Mixed Model
+  model.shell$lmm <- lme(formula(str_c(dep.var," ~ time")),
+                         data = data_t1and2_long %>% drop_na(one_of(dep.var),time,tribe),
+                         random = ~1|tribe)
+
+  model.shell$lmmw <- lme(formula(str_c(dep.var," ~ time")),
+                          data = data_t1and2_long %>% drop_na(one_of(dep.var),time,tribe),
+                          random = ~1|tribe,
+                          weights = ~wgt)
+  
+  model.shell <- modify_at(model.shell,c("lm","lmw","fem","femw"),fixest_to_coeftest)
+  model.shell <- modify_at(model.shell,c("lmm","lmmw"),lme_to_coeftest)
+  
+  return(model.shell)
+}
+
 
 ```
 
@@ -105,6 +181,17 @@ data_t1and2_long <- data_t1and2_long %>%
   
 ```
 
+
+# CCEs Inhabited
+
+```{r CCE, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+
+dep.var <- "n_unique_FIPS"
+stargazer(model.run.t1andt2(dep.var),type="html")
+```
+
+
+
 # Climate Variables
 
 We analyze the difference between climate variables in the pre-migration lands to the post-migration lands.  We focus on heat index, drought, annual precipitation, and wildfire hazard potential.
@@ -134,23 +221,9 @@ The present-day and historical ranges of tribes vary within the dataset.  Tribes
 
 Lastly, there may be unobserved factors specific to the tribe that influence the results.  We control for tribe-specific factors using two related approaches: 1) a linear fixed-effects model and 2) a linear random-effects model.  For each model, we estimate a weighted and unweighted regression.  Standard errors in all specifications are clustered at the tribe level and are robust to heteroskedasticity and serial correlation within a tribe.  
 
-```{r h_100_hist, message = FALSE, warning = FALSE, echo = FALSE}
-
-# OLS
-lm_model <- feols(h_100_hist ~ time, data = data_t1and2_long)
-lmw_model <- feols(h_100_hist ~ time, data = data_t1and2_long, weights = ~wgt)
-fe_model <- feols(h_100_hist ~ time|tribe, data = data_t1and2_long)
-few_model <- feols(h_100_hist ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
-
-esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
-
-confint(lm_model)
-
-# Linear Mixed Model
-lme_model <- nlme::lme(h_100_hist ~ time, data = data_t1and2_long %>% drop_na(h_100_hist,time,tribe), random = ~1|tribe)
-lmew_model <- nlme::lme(h_100_hist ~ time, data = data_t1and2_long %>% drop_na(h_100_hist,time,tribe), random = ~1|tribe,weights = ~wgt)
-
-tab_model(lme_model,lmew_model)
+```{r h_100_hist, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+dep.var <- "h_100_hist"
+stargazer(model.run.t1andt2(dep.var),type="html")
 ```
 
 The results indicate that the present-day locations experience 2.54 (CI: 1.98-3.10) more 100 F days than the historic locations.  We find the lowest estimate in the weighted random-effects model, 2.07 (CI: 0.31-3.83)) and the highest in the unweighted fixed-effects model, 3.31 (CI: 1.86-3.35).  These results suggest a robust increase in the number of 100 F days in present-day CCEs relative to historical CCEs
@@ -176,22 +249,10 @@ ggplot(data_t1and2_long, aes(time, drt_median, colour = time)) +
 ```
 
 
-```{r drt_median, message = FALSE, warning = FALSE, echo = FALSE}
+```{r drt_median, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
-# OLS
-lm_model <- feols(drt_median ~ time, data = data_t1and2_long)
-lmw_model <- feols(drt_median ~ time, data = data_t1and2_long, weights = ~wgt)
-fe_model <- feols(drt_median ~ time|tribe, data = data_t1and2_long)
-few_model <- feols(drt_median ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
-
-esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
-
-
-# Linear Mixed Model
-lme_model <- nlme::lme(drt_median ~ time, data = data_t1and2_long %>% drop_na(drt_median,time,tribe), random = ~1|tribe)
-lmew_model <- nlme::lme(drt_median ~ time, data = data_t1and2_long %>% drop_na(drt_median,time,tribe), random = ~1|tribe,weights = ~wgt)
-
-tab_model(lme_model,lmew_model)
+dep.var <- "drt_median"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
 ```
 
 
@@ -219,22 +280,10 @@ ggplot(data_t1and2_long, aes(time, precip, colour = time)) +
 ```
 
 
-```{r precip, message = FALSE, warning = FALSE, echo = FALSE}
+```{r precip, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
-# OLS
-lm_model <- feols(precip ~ time, data = data_t1and2_long)
-lmw_model <- feols(precip ~ time, data = data_t1and2_long, weights = ~wgt)
-fe_model <- feols(precip ~ time|tribe, data = data_t1and2_long)
-few_model <- feols(precip ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
-
-esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
-
-
-# Linear Mixed Model
-lme_model <- nlme::lme(precip ~ time, data = data_t1and2_long %>% drop_na(precip,time,tribe), random = ~1|tribe)
-lmew_model <- nlme::lme(precip ~ time, data = data_t1and2_long %>% drop_na(precip,time,tribe), random = ~1|tribe,weights = ~wgt)
-
-tab_model(lme_model,lmew_model)
+dep.var <- "precip"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
 ```
 
 
@@ -261,22 +310,149 @@ ggplot(data_t1and2_long, aes(time, fire_median, colour = time)) +
 ```
 
 
-```{r fire_median, message = FALSE, warning = FALSE, echo = FALSE}
+```{r fire_median, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
-# OLS
-lm_model <- feols(fire_median ~ time, data = data_t1and2_long)
-lmw_model <- feols(fire_median ~ time, data = data_t1and2_long, weights = ~wgt)
-fe_model <- feols(fire_median ~ time|tribe, data = data_t1and2_long)
-few_model <- feols(fire_median ~ time|tribe, data = data_t1and2_long, weights = ~wgt)
-
-esttable(lm_model,lmw_model,fe_model,few_model,cluster="tribe")
-
-
-# Linear Mixed Model
-lme_model <- nlme::lme(fire_median ~ time, data = data_t1and2_long %>% drop_na(fire_median,time,tribe), random = ~1|tribe)
-lmew_model <- nlme::lme(fire_median ~ time, data = data_t1and2_long %>% drop_na(fire_median,time,tribe), random = ~1|tribe,weights = ~wgt)
-
-tab_model(lme_model,lmew_model)
+dep.var <- "fire_median"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
 ```
 
 Mixed evidence
+
+# Oil and Gas
+
+
+## Oil
+
+Oil production
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, oil_avg, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, oil_avg, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r oil_avg, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+
+dep.var <- "oil_avg"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
+```
+
+## Gas
+
+Gas production
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, gas_avg, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, gas_avg, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r gas_avg, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+
+dep.var <- "gas_avg"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
+```
+
+
+## Oil and Gas Basins
+
+I think these are plays but need to verify
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, og_basin, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, og_basin, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r og_basin, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+
+dep.var <- "og_basin"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
+```
+
+## Oil and Gas Wells
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, og_well_count, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, og_well_count, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r og_well_count, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+
+dep.var <- "og_well_count"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
+```
+
+
+
+
+# Federal Lands
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, p_all, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, p_all, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+```{r p_all, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+
+dep.var <- "p_all"
+stargazer::stargazer(model.run.t1andt2(dep.var),type="html")
+```
