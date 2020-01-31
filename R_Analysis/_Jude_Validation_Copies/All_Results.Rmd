@@ -1,7 +1,7 @@
 ---
 title: "All Results"
 author: "Jude Bayham"
-date: "December 19, 2019"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: html_document
 ---
 
@@ -42,10 +42,11 @@ library(clubSandwich)
 conflict_prefer("filter", "dplyr")
 conflict_prefer("select", "dplyr")
 
-load("../processed_data.RData")
+load("../final_data.Rdata")
+
 
 #Function to coerce fixest object into stargazer table
-fixest_to_coeftest <- function(fixest.object){
+fixest_to_coeftest <- function(fixest.object,ds){
   require(fixest)
   #Check if arg1 is fixest class
   if(!class(fixest.object)=="fixest"){
@@ -56,9 +57,9 @@ fixest_to_coeftest <- function(fixest.object){
   df <- fixest.object$coeftable 
   
   if(length(fixest.object$obsRemoved)>0){
-    cluster.var <- data_t1and2_long$tribe[-fixest.object$obsRemoved]
+    cluster.var <- ds$tribe[-fixest.object$obsRemoved]
   } else {
-    cluster.var <- data_t1and2_long$tribe
+    cluster.var <- ds$tribe
   }
   
   
@@ -116,80 +117,9 @@ lme_to_coeftest <- function(lme.object){
   
 }
 
-###############################################
-#Function that runs all specifications, clusters se and returns coeftest objects for printing with stargazer
-model.run.t1andt2 <- function(dep.var){
-
-  isnt_out_z <- function(x, thres = 3, na.rm = TRUE) {
-    abs(x - mean(x, na.rm = na.rm)) <= thres * sd(x, na.rm = na.rm)
-  }
-  
-  #Considered a version where outliers are dropped - the fixest_to_coeftest function is too fragile (it currently calls data_t1andt2_long from outside of the function)
-  model_data <- data_t1and2_long #%>%
-    #filter(isnt_out_z((!!as.symbol(dep.var))))
-  
-  # Fixest models
-  model.shell <- list()
-  model.shell$lm <- feols(formula(str_c(dep.var," ~ time")),
-                    data = model_data)
-  model.shell$lmw <- feols(formula(str_c(dep.var," ~ time")),
-                     data = model_data, weights = ~wgt)
-  model.shell$fem <- feols(formula(str_c(dep.var," ~ time|tribe")),
-                    data = model_data)
-  model.shell$femw <- feols(formula(str_c(dep.var," ~ time|tribe")),
-                     data = model_data, weights = ~wgt)
-  
-  # Linear Mixed Model
-  model.shell$lmm <- lme(formula(str_c(dep.var," ~ time")),
-                         data = model_data %>% drop_na(one_of(dep.var),time,tribe),
-                         random = ~1|tribe)
-
-  model.shell$lmmw <- lme(formula(str_c(dep.var," ~ time")),
-                          data = model_data %>% drop_na(one_of(dep.var),time,tribe),
-                          random = ~1|tribe,
-                          weights = ~wgt)
-  
-  model.shell <- modify_at(model.shell,c("lm","lmw","fem","femw"),fixest_to_coeftest)
-  model.shell <- modify_at(model.shell,c("lmm","lmmw"),lme_to_coeftest)
-  
-  return(model.shell)
-}
-
-#Robust standard errors following https://rpubs.com/cuborican/xtpoisson
-#The function takes a gamlss object (output by gamlss) and a vector of conforming clustering variable
-gamlss_clustered_vcov <- function(gamlss.object,cluster=NA){
-  require(gamlss)
-  # if(is.na(cluster)){
-  #   #set cluster to be index
-  #   #fc <- index(gamlss.object$mu.x)
-  # } else {
-  #   #check length conforms
-  #   if(!length(cluster)==length(gamlss.object$y)){
-  #     stop("Clustering vector provided does not conform; check if there are NAs dropped in estimation.")
-  #   }
-  # }
-  esample <- as.numeric(rownames(as.matrix(gamlss.object$mu.qr$qr)))
-  fc <- cluster  #isolates the groups used in estimation
-  
-  # Calculates the new Meat portion of our covariance matrix
-  m <- length(unique(fc))
-  k <- length(gamlss.object$mu.coefficients)
-  u <- gamlss.object$mu.qr$qr
-  u.clust <- matrix(NA, nrow=m, ncol=k)
-  for(j in 1:k){
-    u.clust[,j] <- tapply(u[,j], as.numeric(fc), sum)
-  }
-  u.clust <- u.clust[!rowSums(u.clust,dims = 1)==0,] #dropping all clusters with all zeros
-  cl.vcov <- vcov(gamlss.object)[1:k,1:k]%*%( t(u.clust) %*% (u.clust))%*%vcov(gamlss.object)[1:k,1:k]
-  return(cl.vcov)
-}
 
 
-```
 
-
-Setting up two datasets: 1) the full data including tribes that may not be present in both time periods, and 2) subset of observations where tribes were present in both periods.
-```{r, message = FALSE, warning = FALSE, include=FALSE}
 #Constructing datasets
 data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE) %>%
   ungroup() %>%
@@ -218,21 +148,84 @@ data_t1and2_long <- data_t1and2_long %>%
 ```
 
 
+
+The objective of this supplement is to provide detail on the analysis of CCE characteristics in the historical and present-day time periods.  We begin by detailing the methods used to compare the CCEs across time followed by an investigation of the climate, mineral access, and proximity to federal lands.
+
+
+
+# Methods
+
+Overview of technical details of dataset construction.... 
+
+
+We employ several statistical methods to test whether characteristics of the historical lands differ from the present-day lands.  We focus on land characteristics that are either durable over long time periods or not directly impacted by the human inhabitants of the land.  We divide the characteristics into categories: climate, mineral resource access, and national lands. The set of climate characteristics consist of number of days the temperature exceeds 100 degrees Farenheit, the Palmer Drought Severity Index (PDSI) over ???, annual precipitation over ???, and a measure of wildfire hazard potential.  The set of mineral resource access characteristics include an indicator for whether a CCE lies over an oil or gas basin, the annual quantity of oil production, the annual quantity of natural gas production, and the number of oil and gas wells in a CCE.  Finally, we assess the proximity of historical and present-day CCEs to federal lands.
+
+Our primary method to compare the historical and present-day CCEs is a linear regression of the characteristic as a function of a binary indicator for present-day lands (and an intercept), which amounts to simple ANOVA test of whether the means are equal in the historical and present-day CCEs.  All statistical tests are conducted using cluster-robust standard errors which account for heteroskedasticity and serial correlation that may exist within a tribe due to the proximity of CCEs within a tribe's range.
+
+We assess the robustness of our estimate using alternative model specifications based on the statistical properties of the variable being analyzed.  We estimate a weighted regression model that effectively places equal weight on each tribe given the number of CCEs varies with the historical range of the tribe.  Larger, more dominant, or tribes with CCEs in the Eastern US tend to include more CCEs, which effectively increases the weight on those tribes in a simple regression setting.  We also estimate the models with tribe fixed-effects and random-effects to account for potential trends common across historical and present-day lands within a tribe. 
+
+
+
+
 # CCEs Inhabited
 
-```{r CCE, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+We evaluate the spatial extent of tribes during the historical period and compare it to the present-day extent.  We estimate the difference between the number of CCEs reported as historical lands and the number of CCEs reported as present-day lands using linear regression .
 
+
+```{r CCE, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
 dep.var <- "n_unique_FIPS"
-stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feglm(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          family = "poisson") %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+rownames(model.shell[[1]])
+
+model.shell <- map(model.shell,function(x){
+  rownames(x) <- c("(Intercept)","Present-Day Change")
+  return(x)
+})
+
+stargazer(model.shell,type="text",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Poisson"),
+          model.numbers = T,
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")))
 ```
 
 
 
-# Climate Variables
+# Changes in Historical and Present-Day CCE Characteristics  
+
+
+
+## Climate Variables
 
 We analyze the difference between climate variables in the pre-migration lands to the post-migration lands.  We focus on heat index, drought, annual precipitation, and wildfire hazard potential.
 
-## Heat
+### Heat
 
 We begin with the heat index, which counts the number of days per year expected to exceed 100 F.  The following figures display the distribution of days exceeding 100 F in the pre-migration (time 1) and the post-migration (time 2).   
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
@@ -282,9 +275,16 @@ ggplot(data_long, aes(time, drt_median, colour = time)) +
 
 
 ggplot(data_t1and2_long, aes(time, drt_median, colour = time)) +
-  geom_boxplot() +
+  geom_boxplot(varwidth = T) +
   geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
-  theme_minimal()
+  scale_y_reverse(breaks = seq(-1.5,1,by=.5), labels = c("More Drought -1.5","-1.0","-0.5","0","0.5","Less Drought 1.0")) +
+  scale_colour_manual(values = c('#E0E022','#ff0000'),aesthetics = c("colour", "fill")) +
+  theme_minimal() +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels = c("time 1" = "Historical",
+                              "time 2" = "Present-day")) +
+  theme(legend.position = "none") 
 
 ```
 
@@ -457,14 +457,10 @@ bezi_model_w <-  gamlss(p_all ~ time, family = BEZI, data = bezi_data, trace = F
 
 tab_model(bezi_model,bezi_model_w)
 
-sqrt(diag(gamlss_clustered_vcov(bezi_model,cluster = bezi_data$tribe)))
-sqrt(diag(gamlss_clustered_vcov(bezi_model_w,cluster = bezi_data$tribe)))
-#Cluster robust standard errors
-  # map(list(bezi_model,bezi_model_w),
-  #     function(x){
-  #   
-  # }) %>%
-  # data.table::rbindlist()
+t2.se <- sqrt(diag(gamlss_clustered_vcov(bezi_model,cluster = bezi_data$tribe)))
+t2.se.w <- sqrt(diag(gamlss_clustered_vcov(bezi_model_w,cluster = bezi_data$tribe)))
 
+t2.ci <- exp(c(coef(bezi_model)[2] - 1.96*t2.se[2],coef(bezi_model)[2] + 1.96*t2.se[2]))
+t2.ci.w <- exp(c(coef(bezi_model_w)[2] - 1.96*t2.se.w[2],coef(bezi_model_w)[2] + 1.96*t2.se.w[2]))
 
 ```
