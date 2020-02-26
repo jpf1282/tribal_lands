@@ -36,6 +36,16 @@ create_map <- function(selected_tribe,z,legend.tf=T){
   require(dplyr)
   require(stringr)
   require(cowplot)
+  
+  ######################################
+  #Error checking
+  
+  #Is tribe name valid
+  if(!any(merged_data_record_all_long$tribe %in% selected_tribe)){
+    stop(str_c(selected_tribe," is not a valid tribe name.  Check spelling."))
+    
+  }
+
 
   ######################################
   #Setting up county spatial data from USAboundaries
