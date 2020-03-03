@@ -30,7 +30,7 @@ create_map <- function(selected_tribe,z,legend.tf=T){
   
   #Required packages
   require(sf)
-  require(USAboundaries)
+  require(tigris)
   require(ggplot2)
   require(tidyr)
   require(dplyr)
@@ -49,7 +49,7 @@ create_map <- function(selected_tribe,z,legend.tf=T){
 
   ######################################
   #Setting up county spatial data from USAboundaries
-  us_co <- us_counties(resolution = "low") %>% 
+  us_co <- counties(resolution = "500k") %>% 
     dplyr::filter(!(state_abbr %in% c("HI","AK","PR"))) %>%
     st_transform(4326) #Arbitrary lat and lon projection
 
