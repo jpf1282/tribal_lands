@@ -49,8 +49,9 @@ create_map <- function(selected_tribe,z,legend.tf=T){
 
   ######################################
   #Setting up county spatial data from Tigris
-  us_co <- counties(resolution = "500k", class = "sf") %>% 
+  us_co <- counties(resolution = "500k", class = "sf",refresh=F) %>% 
      dplyr::filter(!(STATEFP %in% c("15","02","72"))) %>% # Remove AK, HI, PR
+    rename_all(str_to_lower) %>%
      st_transform(4326) #Arbitrary lat and lon projection
 
   co_cent <- suppressWarnings(st_centroid(us_co)) 
