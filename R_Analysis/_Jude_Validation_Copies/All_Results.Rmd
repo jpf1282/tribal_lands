@@ -117,6 +117,33 @@ lme_to_coeftest <- function(lme.object){
   
 }
 
+gamlss_clustered_vcov <- function(gamlss.object,cluster=NA){
+  require(gamlss)
+  # if(is.na(cluster)){
+  #   #set cluster to be index
+  #   #fc <- index(gamlss.object$mu.x)
+  # } else {
+  #   #check length conforms
+  #   if(!length(cluster)==length(gamlss.object$y)){
+  #     stop("Clustering vector provided does not conform; check if there are NAs dropped in estimation.")
+  #   }
+  # }
+  esample <- as.numeric(rownames(as.matrix(gamlss.object$mu.qr$qr)))
+  fc <- cluster  #isolates the groups used in estimation
+  
+  # Calculates the new Meat portion of our covariance matrix
+  m <- length(unique(fc))
+  k <- length(gamlss.object$mu.coefficients)
+  u <- gamlss.object$mu.qr$qr
+  u.clust <- matrix(NA, nrow=m, ncol=k)
+  for(j in 1:k){
+    u.clust[,j] <- tapply(u[,j], as.numeric(fc), sum)
+  }
+  u.clust <- u.clust[!rowSums(u.clust,dims = 1)==0,] #dropping all clusters with all zeros
+  cl.vcov <- vcov(gamlss.object)[1:k,1:k]%*%( t(u.clust) %*% (u.clust))%*%vcov(gamlss.object)[1:k,1:k]
+  return(cl.vcov)
+}
+
 
 
 
@@ -169,7 +196,7 @@ We assess the robustness of our estimate using alternative model specifications 
 
 # CCEs Inhabited
 
-We evaluate the spatial extent of tribes during the historical period and compare it to the present-day extent.  We estimate the difference between the number of CCEs reported as historical lands and the number of CCEs reported as present-day lands using linear regression .
+We compare the spatial extent of tribe's historical and present-day areas as measured by the number of CCEs.  We estimate the difference between the number of CCEs reported as historical lands and the number of CCEs reported as present-day lands using several regression models to assess the robustness of the relationship.  Column 1 shows the results of an ordinary least squares regression based on the subset of tribes that inhabited more than one CCE in both the historical and present.  Column 2 estimates a similar model using the same data, but observations are inversely weighted to the number of CCEs inhabited by each tribe.  Since tribes vary in their size and spatial extent, a standard OLS model places more weight on the impact to larger tribes because they represent more observations in the dataset.  Therefore, Model 2 reweights the data to place equal weight on each tribe rather than the population as a whole.  Columns 3 and 4 replicate specifications in columns 1 and 2, respectively, except they include all observations including tribes that have only observations in either the historical or present-day periods.  Column 5 estimates a similar specification using a Poisson regression model.
 
 
 ```{r CCE, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
@@ -199,21 +226,22 @@ model.shell[[5]] <- feglm(formula(str_c(dep.var, " ~ time")),
                           family = "poisson") %>%
   fixest_to_coeftest(.,data_t1and2_long)
 
-rownames(model.shell[[1]])
 
-model.shell <- map(model.shell,function(x){
-  rownames(x) <- c("(Intercept)","Present-Day Change")
-  return(x)
-})
-
-stargazer(model.shell,type="text",
+stargazer(model.shell,type="html",
           ci=T,
           intercept.top = T,
           intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Number of CCEs",
           column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Poisson"),
           model.numbers = T,
-          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")))
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          title = "Table S1: Extent of Area Occupied",
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
 ```
+
+The results indicate that tribes occupied far fewer CCEs in the present period relative to the historical period.  The results in column 1 suggest that tribes occupied an average of 146.7 CCEs during the historical period. By the present day, the average number of CCEs fell by 136.303 (a `r percent(1-(model.shell[[1]][1,1]+model.shell[[1]][2,1])/model.shell[[1]][1,1])` reduction).  The relationship is robust to all specifications.  However, the results of column 2 (weighted OLS) indicate that the abolute estimated effect is heavily influenced by large tribes, yet the percentage reduction in CCEs is of similar magnitude (`r percent(1-(model.shell[[2]][1,1]+model.shell[[2]][2,1])/model.shell[[2]][1,1])`). 
 
 
 
@@ -227,7 +255,8 @@ We analyze the difference between climate variables in the pre-migration lands t
 
 ### Heat
 
-We begin with the heat index, which counts the number of days per year expected to exceed 100 F.  The following figures display the distribution of days exceeding 100 F in the pre-migration (time 1) and the post-migration (time 2).   
+We begin with the heat index, which represents the number of days per year that a CCE exceeded 100 degrees F. 
+
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
 
@@ -244,34 +273,59 @@ ggplot(data_t1and2_long, aes(time, h_100_hist, colour = time)) +
 
 ```
 
-We employ a battery of statistical methods to assess the difference between the number of heat days across the historical (time 1) and the present (time 2) CCEs.  The first column of Table S1 presents the results of an OLS regression of heat day CCEs on a dummy indicating present-day areas.  
 
-The present-day and historical ranges of tribes vary within the dataset.  Tribes with larger ranges therefore have more weight in a statistical analysis of the data.  We test the robustness of our analysis to tribe population and range by creating weights inversely proportional to the number of CCEs within a tribes range.  For example, if the historical area of a tribe covered 100 CCEs, then each CCE would have a weight of 1/100 in the regression.  The weighted regression in column 2 provides an estimate of the mean difference across tribes controlling for the weight of tribes that covered more CCEs.
 
-Lastly, there may be unobserved factors specific to the tribe that influence the results.  We control for tribe-specific factors using two related approaches: 1) a linear fixed-effects model and 2) a linear random-effects model.  For each model, we estimate a weighted and unweighted regression.  Standard errors in all specifications are clustered at the tribe level and are robust to heteroskedasticity and serial correlation within a tribe.  
-
-```{r h_100_hist, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+```{r heat, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
 dep.var <- "h_100_hist"
-stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feglm(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          family = "poisson") %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="html",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Days/Year in excess of 100 degrees F",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Poisson"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S2: Extreme Heat",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
 ```
 
-The results indicate that the present-day locations experience 2.54 (CI: 1.98-3.10) more 100 F days than the historic locations.  We find the lowest estimate in the weighted random-effects model, 2.07 (CI: 0.31-3.83)) and the highest in the unweighted fixed-effects model, 3.31 (CI: 1.86-3.35).  These results suggest a robust increase in the number of 100 F days in present-day CCEs relative to historical CCEs.
-
-*Is this in line with climate change?*
-
-(2.60+5.50)/5.50=1.47%
+The first column of Table S2 presents the results of an OLS regression of heat day CCEs on a dummy variable indicating present-day areas.  We estimate the same alternative specifications that were used in Table S1 to assess robustness of the relationship.  We find a robust relationship indicating that present-day lands experience more days of extreme heat compared to historical lands.
 
 ## Drought
 
-We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought.  
+We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought.  Specifically, we compare the median PDSI of present-day to historical lands.  Note that negative values indicate more drought whereas positive values indicate wetter conditions.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
 
-ggplot(data_long, aes(time, drt_median, colour = time)) +
-  geom_boxplot() +
-  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
-  theme_minimal()
 
 
 ggplot(data_t1and2_long, aes(time, drt_median, colour = time)) +
@@ -289,21 +343,58 @@ ggplot(data_t1and2_long, aes(time, drt_median, colour = time)) +
 ```
 
 
-```{r drt_median, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
+
+
+```{r drought, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
 dep.var <- "drt_median"
-stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feols(formula(str_c(dep.var, " ~ time | tribe")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="html",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Median PDSI",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Tribe FE OLS"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S3: Drought",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
 ```
 
-The results indicate robust evidence that present-day lands experience more drought than historical boundaries.  The mean PDSI on the historical lands ranges from 
 
-*Side note: why each model?  OLS is simple ANOVA comparison.  FE and RE models control for any variation constant across tribe regions.  In many regression contexts, this method controls for otherwise unobservable factors that remain constant over time.  In this case, there are no other controls so the model is detrending the effect estimate for trends common in the time 1 and time 2 periods.  *
+The results indicate fairly robust evidence that present-day lands experience more drought than historical CCEs.  Columns 1-4 present the results of the unweighted (1 and 3) and weighted OLS (2 and 4) regressions using only tribes represented in the historical and present day (1 and 2) and all observations (3 and 4).   The mean PDSI on the historical lands ranges from -0.164 to -0.423.  Four of the five models indicate more drought on present-day lands.  The weighted OLS regression using all data (column 4) has a positive coefficient on present-day.  However, the intercept is considerable lower, which indicates that some tribes that do not appear in both periods have strong influence over the estimate.
 
-(.28+.062)/.28
 
 
 ## Precipitation
 
+We compare the mean annual precipitation (mm) in present-day and historical CCEs.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -322,18 +413,55 @@ ggplot(data_t1and2_long, aes(time, precip, colour = time)) +
 ```
 
 
-```{r precip, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+We report that the difference between historical and present-day lands are statistically indistinguishable.  We estimate the same models as described in Table S3 to assess the robustness of this result.
 
+```{r precip, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
 dep.var <- "precip"
-stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feols(formula(str_c(dep.var, " ~ time | tribe")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="html",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Mean Annual Precipitation (mm)",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Tribe FE OLS"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S4: Precipitation",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
 ```
 
-
+While the evidence for a difference in precipitation across the present-day and historical CCEs is weak, the weighted OLS regressions indicate that the present-day lands experience slightly more precipitation.  This result suggests that there exists a large amount of variation across tribes, and that there are some tribes that occupied more CCEs that experienced less precipitation on some of the lands.
 
 
 ## Wildfire Hazard Potential
 
-We use CCE median rather than mean to reduce the influence of outliers.
+We compare mean wildfire hazard potential rating of all cells within a CCE boundary in the present-day and historical lands.  Figure ?? suggests that the present-day lands have a higher wildfire hazard potential.  Table S5 generally confirms that present-day lands have higher wildfire hazard potential compared to historical lands.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -362,15 +490,98 @@ Figure caption: Wildfire hazard potential in historical and present-day CCEs.  W
 ```{r fire_median, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
 dep.var <- "fire_mean"
-stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+model.shell <- vector("list",5)
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feols(formula(str_c(dep.var, " ~ time | tribe")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="html",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Mean Wildfire Hazard Potential",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Tribe FE OLS"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S5: Wildfire Hazard Potential",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
 ```
 
+We assess the robustness of the comparison with the same battery of alterntive specifications.  While the weighted OLS models (columns 2 and 4) cast some doubt on the relationship, the other models suggest that present-day lands have significantly higher wildfire hazard potential. 
 
-(0.55 + 1.17)/1.17
-
-Mixed evidence
 
 # Oil and Gas
+
+## Oil and Gas Basins
+
+We evaluate access to oil and gas based on the likelihood that a tribe's CCEs lie over subsurface oil and gas.  Our main specification, OLS, in Table S6 (column 1) indicates that present-day lands are less likely to have access to subsurface oil and gas.  Estimating OLS with a binary dependent variable is known as a linear probability model (LPM).  The LPM has two well-known shortcomings: 1) bias when the mass of the distribution lies outside of the unit interval, and 2) heteroskedasticity.  Since we estimate all models with robust standard errors, we should correct for heteroskedasticity.  We estimate a logistic regression (column 5) to assess the robustness of the difference between present-day and historical lands.  The results of the logistic regression indicate that present-day lands have less access to oil and gas supporting the results of our main specification.  However, the results of the weighted OLS (column 2) and the models using all data (columns 3 and 4) are less clear.  
+
+
+```{r og_basin, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+
+dep.var <- "og_basin"
+model.shell <- vector("list",5)
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feglm(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          family = binomial) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="html",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Presence of Subsurface Oil and Gas",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Logit"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S6: Oil and Gas Basin",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
+
+```
 
 
 ## Oil
@@ -382,7 +593,46 @@ The distributions are highly skewed.
 ```{r oil_avg, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
 dep.var <- "oil_avg"
-stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+model.shell <- vector("list",5)
+data_t1and2_long$oil_avg <-  data_t1and2_long$oil_avg/1000000
+data_long$oil_avg <-  data_long$oil_avg/1000000
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feols(formula(str_c(dep.var, " ~ time | tribe")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="text",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Oil Production (millions of barrels)",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Tribe FE OLS"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S7: Oil Production",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
+
 ```
 
 ## Gas
@@ -394,22 +644,49 @@ Gas production
 ```{r gas_avg, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
 dep.var <- "gas_avg"
-stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+model.shell <- vector("list",5)
+data_t1and2_long$gas_avg <-  data_t1and2_long$gas_avg/1000000
+data_long$gas_avg <-  data_long$gas_avg/1000000
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feols(formula(str_c(dep.var, " ~ time | tribe")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="text",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Presence of Subsurface Oil and Gas",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Tribe FE OLS"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S8: Gas Production",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
+
 ```
 
-(4,294,304 + 6,083,833)/6,083,833
 
-## Oil and Gas Basins
-
-*I should add logit here to show robust to specification*
-
-
-
-```{r og_basin, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
-
-dep.var <- "og_basin"
-stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
-```
 
 ## Oil and Gas Wells
 
@@ -418,7 +695,43 @@ stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
 ```{r og_well_count, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
 dep.var <- "og_well_count"
-stargazer::stargazer(model.run.t1andt2(dep.var),type="html",ci=T)
+model.shell <- vector("list",5)
+
+model.shell[[1]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+                          
+model.shell[[2]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_t1and2_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+model.shell[[3]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long) %>%
+  fixest_to_coeftest(.,data_long)
+                          
+model.shell[[4]] <- feols(formula(str_c(dep.var, " ~ time")),
+                          data = data_long,
+                          weights = ~ wgt) %>%
+  fixest_to_coeftest(.,data_long)
+
+model.shell[[5]] <- feols(formula(str_c(dep.var, " ~ time | tribe")),
+                          data = data_t1and2_long) %>%
+  fixest_to_coeftest(.,data_t1and2_long)
+
+
+stargazer(model.shell,type="text",
+          ci=T,
+          intercept.top = T,
+          intercept.bottom = F,
+          dep.var.caption = "Dependent Variable: Presence of Subsurface Oil and Gas",
+          column.labels = c("OLS","Weighted OLS","OLS","Weighted OLS","Tribe FE OLS"),
+          model.numbers = T,
+          covariate.labels = c("Historical (Intercept)","Present-day Change"),
+          add.lines = list(c("Obs","8,165","8,165","10,528","10,528","8,165")),
+          title = "Table S8: Oil and Gas Wells",
+          notes = c("95% confidence intervals in parentheses.",
+                    "All inference is based on tribe-clustered standard errors, which are robust to serial correlation and heteroskedasticity."))
 ```
 
 
