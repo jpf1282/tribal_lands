@@ -1,0 +1,404 @@
+---
+title: "Appendix: Results"
+author: ""
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+header-includes:
+   - \usepackage{rotating, graphicx}
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen=999)
+
+```
+
+```{r project_setup, message = FALSE, warning = FALSE, include=FALSE}
+
+library(readr)
+library(gamlss)
+library(tidyr)
+library(knitr)
+library(DT)
+library(dplyr)
+library(purrr)
+library(stringr)
+library(scales)
+library(broom)
+library(ggplot2)
+library(ggbeeswarm)
+library(MASS)
+library(pscl)
+library(boot)
+library(nlme)
+library(cplm)
+library(conflicted)
+library(fixest)
+library(sjPlot)
+library(stargazer)
+library(clubSandwich)
+
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+
+load("../final_data.Rdata")
+
+source("support_functions2.R")
+
+
+
+#Constructing datasets
+data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE) %>%
+  ungroup() %>%
+  mutate(tribe = factor(tribe),
+         time = factor(time)) 
+
+data_t1and2_long <- filter(data_long, tribe %in% tribes_time1and2_lst$tribe)
+
+#Constructing weights
+data_long <- data_long %>%
+  group_by(tribe,time) %>%
+  summarise(wgt=1/n()) %>%
+  ungroup() %>%
+  left_join(data_long,
+            .,
+            by=c("tribe","time"))
+
+data_t1and2_long <- data_t1and2_long %>%
+  group_by(tribe,time) %>%
+  summarise(wgt=1/n()) %>%
+  ungroup() %>%
+  left_join(data_t1and2_long,
+            .,
+            by=c("tribe","time"))
+  
+```
+
+
+The objective of this supplement is to provide detail on the analysis of CCE characteristics in the historical and present-day time periods.  We begin by detailing the methods used to compare the CCEs across time followed by an investigation of the climate, mineral access, and proximity to federal lands.
+
+
+
+# Methods
+
+We employ several statistical methods to test whether characteristics of the historical lands differ from the present-day lands.  We focus on land characteristics that are either durable over long time periods or not directly impacted by the human inhabitants of the land.  We divide the characteristics into categories: climate, mineral resource access, and national lands. The set of climate characteristics consist of number of days the temperature exceeds 100 degrees Farenheit, the Palmer Drought Severity Index (PDSI) over ???, annual precipitation over ???, and a measure of wildfire hazard potential.  The set of mineral resource access characteristics include an indicator for whether a CCE lies over an oil or gas basin, the annual quantity of oil production, the annual quantity of natural gas production, and the number of oil and gas wells in a CCE.  Finally, we assess the proximity of historical and present-day CCEs to federal lands.
+
+Our primary method to compare the historical and present-day CCEs is a linear regression of the CCE characteristic as a function of a binary indicator for present-day lands (and an intercept), which amounts to simple ANOVA test of whether the means are equal in the historical and present-day CCEs.  The intercept in these models is the mean of the CCE characteristic in the historial period while the present-day coefficient represents the change from the historical to the present-day period.  All statistical tests are conducted using cluster-robust standard errors, which account for heteroskedasticity and serial correlation that may exist within a tribe due to the proximity of CCEs within a tribe's historical or present-day extent.
+
+We assess the robustness of our estimate using several alternative model specifications and two forms of the data: 1) only tribes with records in the present-day and historical period, and 2) all tribes including those with records in only one time period (denoted All in the following tables).  In each table below, we present a set of the following models:
+
+- OLS: Ordinary Least Squares (OLS) model using only data on tribes with records in the historical and present-day periods.  
+
+- Weighted OLS: weighted OLS model using only data on tribes with records in the historical and present-day periods.  We construct weights as the inverse of the total number of CCEs associated with a tribe in each time period.  The weighted regression model effectively places equal weight on each tribe given that the number of CCEs varies with the historical range of the tribe.  Larger, more dominant, or tribes with CCEs in the Eastern US may include more CCEs, which effectively increases the weight on those tribes in a simple regression setting. By weighting the observations, the results can be interpretted as a tribal-level analysis. 
+
+- Full OLS: OLS model using the full dataset, which includes tribes present in either the historical or present-day periods. The full dataset increases the sample size but may introduce bias due to the dissolution and formation of tribes between our time periods.  
+
+- Full Weighted OLS: weighted OLS model using the full dataset.  
+
+- Poisson: a Poisson regression when the data are integer count data.
+
+- Tribe FE: an OLS regression with tribe fixed effects.  The fixed effect regression estimates tribe-specific means in the historical period, but a common coefficient on the difference between the historical and present-day periods.  This model would control for unobserved factors within a tribe that may influence any relocation policy and thus the characteristics of the CCEs in both the historical and present-day periods.  
+
+- BEZI: zero-inflated Beta regression when the dependent variable is bounded between zero and one (e.g., percent).
+
+
+# CCEs Inhabited
+
+We compare the spatial extent of tribe's historical and present-day areas as measured by the number of CCEs.  We estimate the difference between the number of CCEs reported as historical lands and the number of CCEs reported as present-day lands using several regression models to assess the robustness of the relationship.  
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "n_unique_FIPS"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- glm_clustered(dep.var,df=data_t1and2_long,family = "poisson")
+
+sg_table(model.shell,
+         dep.name = "Number of CCEs",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Poisson"),
+         title = "Extent of Area Occupied")
+```
+
+The results indicate that tribes occupied far fewer CCEs in the present period relative to the historical period.  The results in column 1 suggest that tribes occupied an average of 146.7 CCEs during the historical period. By the present day, the average number of CCEs fell by 136.303 (a `r percent(1-(model.shell[[1]]$results[1,1]+model.shell[[1]]$results[2,1])/model.shell[[1]]$results[1,1])` reduction).  The relationship is robust to all specifications.  However, the results of column 2 (weighted OLS) indicate that the abolute estimated effect is heavily influenced by large tribes, yet the percentage reduction in CCEs is of similar magnitude (`r percent(1-(model.shell[[2]]$results[1,1]+model.shell[[2]]$results[2,1])/model.shell[[2]]$results[1,1])`). 
+
+
+
+# Climate Variables
+
+We analyze the difference between climate variables in the pre-migration lands to the post-migration lands.  We focus on heat index, drought, annual precipitation, and wildfire hazard potential.
+
+## Heat
+
+We begin with the heat index, which represents the number of days per year that a CCE exceeded 100 degrees F. The results suggest that the present-day lands experience 2-3 more days in excess of 100 degrees per year compared to historical lands, and that this relationship is fairly robust across specifications. The point estimates range from 2.53 (Weighted OLS) to 2.92 (Full OLS).  The coefficients of the Poisson model are not directly comparable to the OLS estimates.  The model suggests that historical lands experience about 5.5 (5.5=exp(1.705)) days a year over 100 degrees, while the present-days lands experience 2.5 (2.5=exp(1.705)*(exp(.387)-1)) additional days over 100, which is comparable to the OLS estimates.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "h_100_hist"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- glm_clustered(dep.var,df=data_t1and2_long,family = "poisson")
+
+sg_table(model.shell,
+         dep.name = "Days per Year in excess of 100 degrees F",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Poisson"),
+         title = "Extreme Heat")
+```
+
+
+
+
+## Drought
+
+We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought.  Specifically, we compare the median PDSI of present-day to historical lands.  Note that negative values indicate more drought whereas positive values indicate wetter conditions.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+ggplot(data_t1and2_long, aes(time, drt_median, colour = time)) +
+  geom_boxplot(varwidth = T) +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  scale_y_reverse(breaks = seq(-1.5,1,by=.5), labels = c("More Drought -1.5","-1.0","-0.5","0","0.5","Less Drought 1.0")) +
+  scale_colour_manual(values = c('#E0E022','#ff0000'),aesthetics = c("colour", "fill")) +
+  theme_minimal() +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels = c("time 1" = "Historical",
+                              "time 2" = "Present-day")) +
+  theme(legend.position = "none") 
+
+```
+
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "drt_median"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+
+sg_table(model.shell,
+         dep.name = "Median PDSI",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Drought")
+```
+
+
+## Precipitation
+
+We compare the mean annual precipitation (mm) in present-day and historical CCEs.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, precip, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, precip, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+```
+
+
+We report that the difference between historical and present-day lands are statistically indistinguishable.  We estimate the same models as described in Table S3 to assess the robustness of this result.
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "precip"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+
+sg_table(model.shell,
+         dep.name = "Mean Annual Precipitation",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Precipitation")
+```
+
+While the evidence for a difference in precipitation across the present-day and historical CCEs is weak, the weighted OLS regressions indicate that the present-day lands experience slightly more precipitation.  This result suggests that there exists a large amount of variation across tribes, and that there are some tribes that occupied more CCEs that experienced less precipitation on some of the lands.
+
+
+## Wildfire Hazard Potential
+
+We compare mean wildfire hazard potential rating of all cells within a CCE boundary in the present-day and historical lands.  Figure ?? suggests that the present-day lands have a higher wildfire hazard potential.  Table S5 generally confirms that present-day lands have higher wildfire hazard potential compared to historical lands.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+
+ggplot(data_long, aes(time, fire_mean, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  theme_minimal()
+
+
+ggplot(data_t1and2_long, aes(time, fire_mean, colour = time)) +
+  geom_boxplot() +
+  geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
+  scale_colour_manual(values = c('#32CD32','#ff0000'),aesthetics = c("colour", "fill")) +
+  theme_minimal() +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels = c("time 1" = "Historical",
+                              "time 2" = "Present-day")) +
+  theme(legend.position = "none") 
+  
+
+```
+Figure caption: Wildfire hazard potential in historical and present-day CCEs.  While indigenous people were concentrated on fewer total CCEs (width of distribution), the mean WHP is higher in the present-day CCEs than the historical.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "fire_mean"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+
+sg_table(model.shell,
+         dep.name = "Mean Wildfire Hazard Potential",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Wildfire Hazard Potential")
+```
+
+Unweighted OLS models suggest that present-day area have higher wildfire hazard potential relative to historical lands.  However, the weighted models find no relationship (Weighted OLS) and even a slight negative relationship (Full Weighted OLS).  These results suggest that there are likely tribes that covered many CCEs that moved to lands with higher wildfire hazard potential.  While wildfire hazard potential is a function of the natural environment, it can be shaped by deliberate modification of the natural environment.  
+
+
+# Oil and Gas
+
+## Oil and Gas Basins
+
+We evaluate access to oil and gas based on the likelihood that a tribe's CCEs lie over subsurface oil and gas.  Our main specification, OLS, in Table S6 (column 1) indicates that present-day lands are less likely to have access to subsurface oil and gas.  Estimating OLS with a binary dependent variable is known as a linear probability model (LPM).  The LPM has two well-known shortcomings: 1) bias when the mass of the distribution lies outside of the unit interval, and 2) heteroskedasticity.  Since we estimate all models with robust standard errors, we should correct for heteroskedasticity.  We estimate a logistic regression (column 5) to assess the robustness of the difference between present-day and historical lands.  The results of the logistic regression indicate that present-day lands have less access to oil and gas supporting the results of our main specification.  However, the results of the weighted OLS (column 2) and the models using all data (columns 3 and 4) are less clear.  
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "og_basin"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- glm_clustered(dep.var,df=data_t1and2_long,family = "binomial")
+
+sg_table(model.shell,
+         dep.name = "Presence of Subsurface Oil and Gas",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Logit"),
+         title = "Oil and Gas Access")
+```
+
+
+
+
+## Oil
+
+Oil production
+
+The distributions are highly skewed.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "oil_avg"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+
+sg_table(model.shell,
+         dep.name = "Oil Production (millions of barrels)",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Oil Production")
+```
+
+## Gas
+
+Gas production
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "gas_avg"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+
+sg_table(model.shell,
+         dep.name = "Gas Production ??units",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Gas Production")
+```
+
+
+## Oil and Gas Wells
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "og_well_count"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+model.shell[[2]] <- ols_clustered(dep.var,df=data_t1and2_long,weighted = T)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,weighted = F)
+model.shell[[4]] <- ols_clustered(dep.var,df=data_long,weighted = T)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long,weighted = F)
+
+sg_table(model.shell,
+         dep.name = "Count of Oil and Gas Wells",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Oil and Gas Wells")
+```
+
+
+# Federal Lands
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+# bezi_data <- mutate(data_t1and2_long, 
+#                     p_all = ifelse(p_all >= 1, .99999, p_all)) %>%
+#   filter(!is.na(p_all)) %>%
+#   dplyr::select(time, tribe, p_all,wgt)
+# 
+# bezi_model <- gamlss(p_all ~ time, family = BEZI, data = bezi_data, trace = F)
+# 
+# bezi_model_w <-  gamlss(p_all ~ time, family = BEZI, data = bezi_data, trace = F,weights = wgt)
+# 
+# tab_model(bezi_model,bezi_model_w)
+# 
+# t2.se <- sqrt(diag(gamlss_clustered_vcov(bezi_model,cluster = bezi_data$tribe)))
+# t2.se.w <- sqrt(diag(gamlss_clustered_vcov(bezi_model_w,cluster = bezi_data$tribe)))
+# 
+# t2.ci <- exp(c(coef(bezi_model)[2] - 1.96*t2.se[2],coef(bezi_model)[2] + 1.96*t2.se[2]))
+# t2.ci.w <- exp(c(coef(bezi_model_w)[2] - 1.96*t2.se.w[2],coef(bezi_model_w)[2] + 1.96*t2.se.w[2]))
+
+```
+
+
+
+
+
+
+
