@@ -1,3 +1,4 @@
 load("/Users/kathrynmcconnell/Documents/GitHub/tribal_lands2/R_Analysis/_Maps_&_Viz/_Migration_Maps/county_FIPS_v2.RData")
 load("/Users/kathrynmcconnell/Documents/GitHub/tribal_lands/R_Analysis/_Maps_&_Viz/_Migration_Maps/mdral.RData")
 load("/Users/kathrynmcconnell/Documents/GitHub/tribal_lands/R_Analysis/_Maps_&_Viz/_Migration_Maps/county_FIPS_v2.RData")
+load("/Users/kathrynmcconnell/Dropbox (Yale_FES)/Dissertation/mdral.RData")

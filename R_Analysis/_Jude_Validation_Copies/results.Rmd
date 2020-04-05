@@ -134,7 +134,7 @@ We analyze the difference between climate variables in the pre-migration lands t
 
 ## Heat
 
-We begin with the heat index, which represents the number of days per year that a CCE exceeded 100 degrees F. The results suggest that the present-day lands experience 2-3 more days in excess of 100 degrees per year compared to historical lands, and that this relationship is fairly robust across specifications. The point estimates range from 2.53 (Weighted OLS) to 2.92 (Full OLS).  The coefficients of the Poisson model are not directly comparable to the OLS estimates.  The model suggests that historical lands experience about 5.5 (5.5=exp(1.705)) days a year over 100 degrees, while the present-days lands experience 2.5 (2.5=exp(1.705)*(exp(.387)-1)) additional days over 100, which is comparable to the OLS estimates.
+We begin with the heat index, which represents the number of days per year that a CCE exceeded 100 degrees F. The results suggest that the present-day lands experience 2-3 more days in excess of 100 degrees per year compared to historical lands, and that this relationship is fairly robust across specifications. The point estimates range from 2.52 (Weighted OLS) to 2.92 (Full OLS).  The coefficients of the Poisson model are not directly comparable to the OLS estimates.  The model suggests that historical lands experience about 5.5 (5.5=exp(1.705)) days a year over 100 degrees, while the present-days lands experience 2.5 (2.5=exp(1.705)*(exp(.387)-1)) additional days over 100, which is comparable to the OLS estimates.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -157,7 +157,7 @@ sg_table(model.shell,
 
 ## Drought
 
-We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought.  Specifically, we compare the median PDSI of present-day to historical lands.  Note that negative values indicate more drought whereas positive values indicate wetter conditions.
+We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought, which is calculated between -10 and +10 and denotes drier conditions as negative values and wetter conditions as positive values.  Specifically, we compare the median PDSI of present-day to historical lands. Our OLS, Weighted OLS, Full OLS, and Tribe Fixed Effects models all indicate that present-day lands are significantly drier than historical lands, with point estimates ranging between −0.06 (Weighted OLS) and −0.18 (OLS).  The Full Weighted OLS is the only model resulting in a significant and positive coefficient for Present-day Change (.08), indicating a decline in drought conditions over time. 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -196,7 +196,7 @@ sg_table(model.shell,
 
 ## Precipitation
 
-We compare the mean annual precipitation (mm) in present-day and historical CCEs.
+We compare the mean annual precipitation (mm) in present-day and historical CCEs, utilizing climate data from the PRISM Climate Group. 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -239,7 +239,7 @@ While the evidence for a difference in precipitation across the present-day and 
 
 ## Wildfire Hazard Potential
 
-We compare mean wildfire hazard potential rating of all cells within a CCE boundary in the present-day and historical lands.  Figure ?? suggests that the present-day lands have a higher wildfire hazard potential.  Table S5 generally confirms that present-day lands have higher wildfire hazard potential compared to historical lands.
+We compare mean wildfire hazard potential rating of all cells within a CCE boundary in the present-day and historical lands.  Figure 2b suggests that the present-day lands have a higher wildfire hazard potential.  Table S5 generally confirms that present-day lands have higher wildfire hazard potential compared to historical lands.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -263,7 +263,7 @@ ggplot(data_t1and2_long, aes(time, fire_mean, colour = time)) +
   
 
 ```
-Figure caption: Wildfire hazard potential in historical and present-day CCEs.  While indigenous people were concentrated on fewer total CCEs (width of distribution), the mean WHP is higher in the present-day CCEs than the historical.
+Figure caption: Wildfire hazard potential in historical and present-day CCEs.  While indigenous peoples were concentrated on fewer total CCEs (width of distribution), the mean WHP is higher in the present-day CCEs than the historical.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -281,7 +281,7 @@ sg_table(model.shell,
          title = "Wildfire Hazard Potential")
 ```
 
-Unweighted OLS models suggest that present-day area have higher wildfire hazard potential relative to historical lands.  However, the weighted models find no relationship (Weighted OLS) and even a slight negative relationship (Full Weighted OLS).  These results suggest that there are likely tribes that covered many CCEs that moved to lands with higher wildfire hazard potential.  While wildfire hazard potential is a function of the natural environment, it can be shaped by deliberate modification of the natural environment.  
+Unweighted OLS models suggest that present-day area have higher wildfire hazard potential relative to historical lands.  However, the weighted models find no relationship (Weighted OLS) and even a slight negative relationship (Full Weighted OLS).  These results suggest that there are likely tribes that covered many CCEs that moved to lands with higher wildfire hazard potential.  While wildfire hazard potential is a function of the natural environment, it is also influenced by human modifications of the natural and built environment.  
 
 
 # Oil and Gas
@@ -311,9 +311,9 @@ sg_table(model.shell,
 
 ## Oil
 
-Oil production
+We compare oil production (measured in millions of barrels) between historical and present-day lands, with model specifications providing some evidence that there is less oil production on present-day CCE's. While our primary OLS specification shows an insignificant reduction in oil production (1.23 million barrels), additional model specifications show significant reductions (between 2.59 and 18.43 million barrels). 
 
-The distributions are highly skewed.
+The distributions are highly skewed. <- Jude made this note, I can't see distributions in the PDF so am leaving this here for now.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -333,7 +333,7 @@ sg_table(model.shell,
 
 ## Gas
 
-Gas production
+Drawing on the U.S. Department of Agriculture's natural gas production data (measured in ?? cubic feet), we compare gas production between historical and present-day lands.  While our OLS model shows significantly greater (4.29 million cubic feet) gas production on present-day lands, the confidence interval is large and crosses zero.  Additional model specification yield mixed results. Our Full OLS model similarly shows a significant increase in production (5.2 million cubic feet), but the Weighted, Full Weighted OLS, and Tribe Fixed Effects models show insignificant changes in gas production between time periods. This variation suggests that our OLS findings are not especially robust, and that Tribes with larger CCE coverage tend to have higher natural gas production in the present-day, thus influencing unweighted model outcomes.
 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
@@ -355,6 +355,7 @@ sg_table(model.shell,
 
 ## Oil and Gas Wells
 
+Utilizing U.S. Geological Survey data on well locations between 1859 - 2005, we evaluate differences in the total number of oil and gas wells between historical and present-day lands. All model specifications indicate that the total number of wells is significantly higher on present-day lands, suggesting that this relationship is robust. Estimates of the average number of additional wells per present-day CCE range from 94.82 (OLS) to 141.38 (Full OLS) compared to historical CCE's.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
