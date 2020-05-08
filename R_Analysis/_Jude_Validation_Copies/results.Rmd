@@ -89,6 +89,59 @@ The objective of this supplement is to provide detail on the analysis of CCE cha
 
 
 
+# Data Descriptions
+
+### Heat
+Source: National Weather Service, Heat Index, (available at https://www.weather.gov/safety/heat-index).
+Description: how many days per year the heat index tops 100°F
+Units:
+Dates:
+
+### Drought
+We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought. We incorporate drought conditions in the continental US using weekly gridded (4km resolution) Palmer Drought Severity Index (PDSI) data from gridMET (Abatzoglou, 2013).  
+
+Source: 
+Description: 
+Units: The PDSI is unitless and ranges from -10 (extreme drought) to +10 (extreme wet).
+Dates:
+
+### Precipitation
+Source: PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
+Description: 
+Units:
+Dates:
+
+### Wildfire Hazard Potential
+Source: G. Dillon, “Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition” (Forest Service Research Data Archive, Fort Collins, CO, 2018), (available at https://www.arcgis.com/home/item.html?id=fc7f208f4bf34cf3ad34eff72261b140).
+Description:
+Units:
+Dates:
+
+### Oil and Gas Basins
+Source: Maps: Oil and Gas Exploration, Resources, and Production. U.S. Energy Information Administration, (available at https://www.eia.gov/maps/maps.htm).
+Description: U.S. Energy Information Administration's database of sedimantary basin boundaries in continental US
+Units:
+Dates:
+
+### Oil and Gas Production
+Source: NEED CITATION (missing from main manuscript), U.S. Department of Agriculture’s natural gas production data
+Description: raw annual gross production between
+Units:
+Dates: 2000 - 2011
+
+### Oil and Gas Wells
+Source: U.S. Geological Survey data on well locations between  (given to us by USGS, unclear if there is a formal database to cite here)
+Description:
+Units:
+Dates: 1859 - 2005
+
+### Federal Lands
+Source: ProtectedLands.net. A Resource for the Protected Areas Database of the United States (PAD-US), (available at http://www.protectedlands.net).
+Description:
+Units:
+Dates:
+
+
 # Methods
 
 We employ several statistical methods to test whether characteristics of the historical lands differ from the present-day lands.  We focus on land characteristics that are either durable over long time periods or not directly impacted by the human inhabitants of the land.  We divide the characteristics into categories: climate, mineral resource access, and national lands. The set of climate characteristics consist of number of days the temperature exceeds 100 degrees Farenheit, the Palmer Drought Severity Index (PDSI) over ???, annual precipitation over ???, and a measure of wildfire hazard potential in 2018.  The set of mineral resource access characteristics include an indicator for whether a CCE lies over an oil or gas basin, the annual quantity of oil production, the annual quantity of natural gas production, and the number of oil and gas wells in a CCE.  Finally, we assess the proximity of historical and present-day CCEs to federal lands.
@@ -168,7 +221,7 @@ sg_table(model.shell,
 
 ## Drought
 
-We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought. We incorporate drought conditions in the continental US using weekly gridded (4km resolution) Palmer Drought Severity Index (PDSI) data from gridMET (Abatzoglou, 2013).  The PDSI is unitless and ranges from -10 (extreme drought) to +10 (extreme wet).  First, we calculate the median PDSI of all grid cells within the county boundary for each week from 1980-2017.  We then calculate the  mean PDSI over all weeks 1980-2017.  
+We calculate the median Palmer Drought Severity Index (PDSI) of all grid cells within the county boundary for each week from 1980-2017.  We then calculate the  mean PDSI over all weeks 1980-2017.  
 
 Table \ref{tab:drought} present the results. Our OLS, Weighted OLS, Full OLS, and Tribe Fixed Effects models all indicate that present-day lands are significantly drier than historical lands, with point estimates ranging between -0.06 (Weighted OLS) and -0.18 (OLS).  The Full Weighted OLS is the only model resulting in a significant and positive coefficient for Present-day Change (.08), indicating a decline in drought conditions over time. 
 
