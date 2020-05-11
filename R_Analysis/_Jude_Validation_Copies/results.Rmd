@@ -92,54 +92,53 @@ The objective of this supplement is to provide detail on the analysis of CCE cha
 # Data Descriptions
 
 ### Heat
-Source: National Weather Service, Heat Index, (available at https://www.weather.gov/safety/heat-index).
-Description: how many days per year the heat index tops 100°F
-Units:
-Dates:
+The National Weather Service's Heat Index incorporates both relative humidity and actual air temperature to describe how hot the temperature feels in degrees Farenheit. We utilize a measure of the number of days per year that the Heat Index is greater than 100 degrees Farenheit.
+Dates: CAN'T FIND ACTUAL DATA DOWNLOAD SITE, SO CAN'T FIND DATES.
+
+National Weather Service, Heat Index, (available at https://www.weather.gov/safety/heat-index).
 
 ### Drought
-We use the Palmer Drought Severity Index (PDSI) to assess exposure to drought. We incorporate drought conditions in the continental US using weekly gridded (4km resolution) Palmer Drought Severity Index (PDSI) data from gridMET (Abatzoglou, 2013).  
+We incorporate drought conditions in the continental US using weekly gridded (4km resolution) Palmer Drought Severity Index (PDSI) data from gridMET (Abatzoglou, 2013). The Palmer Drought Severity Index (PDSI) is a unitless measure which assesses exposure to drought and ranges from -10 (extreme drought) to +10 (extreme wet).
 
-Source: 
-Description: 
-Units: The PDSI is unitless and ranges from -10 (extreme drought) to +10 (extreme wet).
-Dates:
+Dates: UNCLEAR WHICH DATASET WAS DOWNLOADED
+
+A. Dai, National Center for Atmospheric Research Staff, Palmer Drought Severity Index (PDSI) (2019), (available at https://climatedataguide.ucar.edu/climate-data/palmer-drought-severity-index-pdsi).
 
 ### Precipitation
-Source: PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
-Description: 
-Units:
-Dates:
+Oregon State University's PRISM Climate Group calcualtes average precipitation (inches) over 30-year time periods. The data which we use is calculated between 1981 and 2010.
+
+PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
 
 ### Wildfire Hazard Potential
-Source: G. Dillon, “Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition” (Forest Service Research Data Archive, Fort Collins, CO, 2018), (available at https://www.arcgis.com/home/item.html?id=fc7f208f4bf34cf3ad34eff72261b140).
-Description:
-Units:
-Dates:
+The USDA Forest Service's Fire Modeling Instititute's Wildfire hazard potential (WHP) models the probability of a wildfire occuring which would be difficult to contain given existing suppression resources. The 2018 WHP is categorized into five groups, ranging from "very low" and "low" to "moderate", "high", and "very high." The data is originally produced as a grid layer with 270 meter resolution. We calculate the mean and median WHP for all grid cells within a CCE.
+
+DID WE USE 2018 VERSION?
+
+G. Dillon, “Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition” (Forest Service Research Data Archive, Fort Collins, CO, 2018), (available at https://www.arcgis.com/home/item.html?id=fc7f208f4bf34cf3ad34eff72261b140).
 
 ### Oil and Gas Basins
-Source: Maps: Oil and Gas Exploration, Resources, and Production. U.S. Energy Information Administration, (available at https://www.eia.gov/maps/maps.htm).
-Description: U.S. Energy Information Administration's database of sedimantary basin boundaries in continental US
-Units:
-Dates:
+The U.S. Energy Information Administration provides a map of sedimentary basin boundaries within the continental United States. Using this map, we construct a binary variable which describes whether a CCE does or does not overlap an oil or gas basin.
+
+Oil and Gas Exploration, Resources, and Production. U.S. Energy Information Administration, (available at https://www.eia.gov/maps/maps.htm).
 
 ### Oil and Gas Production
-Source: NEED CITATION (missing from main manuscript), U.S. Department of Agriculture’s natural gas production data
-Description: raw annual gross production between
-Units:
-Dates: 2000 - 2011
+The U.S. Department of Agriculture reports gross withdrawls of oil and gas at the county level between 2000 and 2011.
+
+WHAT UNITS?
+NEED CITATION. IS IT THIS? https://data.nal.usda.gov/dataset/county-level-oil-and-gas-production-us
 
 ### Oil and Gas Wells
-Source: U.S. Geological Survey data on well locations between  (given to us by USGS, unclear if there is a formal database to cite here)
-Description:
-Units:
-Dates: 1859 - 2005
+The U.S. Geological Survey reports all known well locations across the continental United States between 1859 and 2005. We calculate the total number of wells drilled in each CCE over this 146-year period.
+
+NEED CITATION, JUSTIN RECEIVED DIRECTLY FROM USGS
 
 ### Federal Lands
-Source: ProtectedLands.net. A Resource for the Protected Areas Database of the United States (PAD-US), (available at http://www.protectedlands.net).
-Description:
-Units:
-Dates:
+The U.S. Geological Survey's Protected Lands Database of the U.S. (PAD-US) is a spatial inventory of all formally protected lands. We select only lands protected by the Federal Government (e.g. national parks, national forests, etc.). We calculate total land area of a CCE which is designated as a federally protected area.
+
+CONFIRM WE ONLY USE FEDERAL LANDS
+WHAT UNIT (ACRES? BEN DID THIS)
+
+ProtectedLands.net. A Resource for the Protected Areas Database of the United States (PAD-US), (available at http://www.protectedlands.net).
 
 
 # Methods
