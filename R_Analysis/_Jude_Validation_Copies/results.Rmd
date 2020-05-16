@@ -47,7 +47,7 @@ conflict_prefer("select", "dplyr")
 
 load("../final_data.Rdata")
 
-source("support_functions2.R")
+source("support_functions.R")
 
 
 
@@ -99,7 +99,7 @@ We focus on land characteristics that are either durable over long time periods 
 
 
 
-Table \ref{tab:sum_full} contains summary statistics for the dataset used in the analyses.  However, there are many instances where a tribe is present in only the present-day set or the historical set.  We also present the summary statistics of a dataset with only tribes present in both periods.  Table \ref{tab:sum_full} contains the summary statistics of the Present-day and Historical dataset.  While the number of observations is clearly smaller in the dataset with tribes present in both periods, the distribution of the datasets is very similar suggesting that these tribes who enter or exit the dataset are not systematically different from those in both periods with regard to our CCE characteristics.
+Table \ref{tab:sum_full} contains summary statistics for the dataset used in the analyses.  However, there are many instances where a tribe is present in only the present-day set or the historical set.  We also present the summary statistics of a dataset with only tribes present in both periods.  Table \ref{tab:sum_both} contains the summary statistics of the Present-day and Historical dataset.  While the number of observations is clearly smaller in the dataset with tribes present in both periods, the distribution of the datasets is very similar suggesting that these tribes who enter or exit the dataset are not systematically different from those in both periods with regard to our CCE characteristics.
 
 
 
@@ -118,16 +118,9 @@ Oregon State University's PRISM Climate Group calcualtes average precipitation (
 PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
 
 ## Wildfire Hazard Potential
-A changing climate is expected to alter wildfire behavior in the US, and particularly in the Western US (Abazoglou and Williams, 2016; Westerling et al. 2006).  We construct a measure of wildfire risk using a gridded (270 meter) index called Wildfire Hazard Potential (WHP) (Dillon, 2018).  The WHP is a discrete scale from 1 (very low fire hazard potential) to 5 (very high hazard potential). We calculate the mean WHP of all grid cells within the county boundary.
+A changing climate is expected to alter wildfire behavior in the US, and particularly in the Western US (Abazoglou and Williams, 2016; Westerling et al. 2006).  We construct a measure of wildfire risk using a gridded (270 meter) index called Wildfire Hazard Potential (WHP) (Dillon, 2018).  The WHP is a discrete scale from 1 (very low fire hazard potential) to 5 (very high hazard potential) designed to inform fuel planning efforts.  We choose this measure because it synthesizes many ecological, geographic, and atmospheric factors into a single index. We calculate the mean WHP of all grid cells within the county boundary.
 
 
-Abatzoglou, J. T. (2013). Development of gridded surface meteorological data for ecological applications and modelling. International Journal of Climatology, 33(1), 121–131. https://doi.org/10.1002/joc.3413
-
-Abatzoglou, J. T., & Williams, A. P. (2016). Impact of anthropogenic climate change on wildfire across western US forests. Proceedings of the National Academy of Sciences, 113(42), 11770–11775. https://doi.org/10.1073/pnas.1607171113
-
-Dillon, Gregory K. 2018. Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2015-0046-2
-
-Westerling, A. L., Hidalgo, H. G., Cayan, D. R., & Swetnam, T. W. (2006). Warming and Earlier Spring Increase Western U.S. Forest Wildfire Activity. Science, 313(5789), 940–943. https://doi.org/10.1126/science.1128834
 
 ## Oil and Gas Basins
 The U.S. Energy Information Administration provides a map of sedimentary basin boundaries within the continental United States. Using this map, we construct a binary variable which describes whether a CCE does or does not overlap an oil or gas basin.
@@ -227,7 +220,7 @@ We assess the robustness of our estimate using several alternative model specifi
 
 # Results
 
-This section presents the results of the analysis along with several robustness checks.
+This section presents the results of the analysis along with several robustness checks.  Throughout the text 95% confidence intervals are presented as [lower,upper]. 
 
 ## CCEs Inhabited
 
@@ -258,7 +251,7 @@ The results in Table \ref{tab:cce} indicate that tribes occupied far fewer CCEs 
 
 ## Heat
 
-We begin with the heat index, which represents the number of days per year that a CCE exceeded 100 degrees F. The results in Table \ref{tab:heat} suggest that the present-day lands experience 2-3 more days in excess of 100 degrees per year compared to historical lands, and that this relationship is fairly robust across specifications. The point estimates range from 2.52 (Weighted OLS) to 2.92 (Full OLS).  The coefficients of the Poisson model are not directly comparable to the OLS estimates.  The model suggests that historical lands experience about 5.5 (5.5=exp(1.705)) days a year over 100 degrees, while the present-days lands experience 2.5 (2.5=exp(1.705)*(exp(.387)-1)) additional days over 100, which is comparable to the OLS estimates.
+The results in Table \ref{tab:heat} suggest that the present-day lands experience 2-3 more days in excess of 100 degrees per year compared to historical lands. The point estimates range from 2.60 [0.73, 4.47] from the OLS model to 2.92 [1.00, 4.83] from the Full OLS model.  The coefficients of the Poisson model are not directly comparable to the OLS estimates.  The model suggests that historical lands experience about 5.5 (5.5=exp(1.705)) days a year over 100 degrees, while the present-days lands experience 2.5 (2.5=exp(1.705)*(exp(.387)-1)) additional days over 100, which is comparable to the OLS estimates.  The results of the Weighted OLS and Full Weighted OLS models show not statistically significant difference.  This lack of significance of the weighted models indicates that difference is driven by tribes that have large CCE extents, which likely corresponds to population.
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -282,9 +275,7 @@ sg_table(model.shell,
 
 ## Drought
 
-We calculate the median Palmer Drought Severity Index (PDSI) of all grid cells within the county boundary for each week from 1980-2017.  We then calculate the  mean PDSI over all weeks 1980-2017.  
-
-Table \ref{tab:drought} present the results. Our OLS, Weighted OLS, Full OLS, and Tribe Fixed Effects models all indicate that present-day lands are significantly drier than historical lands, with point estimates ranging between -0.06 (Weighted OLS) and -0.18 (OLS).  The Full Weighted OLS is the only model resulting in a significant and positive coefficient for Present-day Change (.08), indicating a decline in drought conditions over time. 
+Table \ref{tab:drought} present the results of the analysis of differences in drought across the historical and present-day lands.  Our variable is the change in drought over time.  The coefficients on Historical indicate that even the historical lands are experiencing more drought.  The coefficients on present-day change indicate that present day lands are becoming even drier experiencing more drought.  OLS, Weighted OLS, Full OLS, and Tribe Fixed Effects models all indicate that present-day lands are about twice as dry as historical lands, with point estimates ranging between -0.11 (Weighted OLS) and -0.18 (OLS).  
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -324,7 +315,7 @@ sg_table(model.shell,
 
 ## Precipitation
 
-We compare the mean annual precipitation (mm) in present-day and historical CCEs, utilizing climate data from the PRISM Climate Group. 
+Table \ref{tab:precip} present the results of the analysis of precipitation across the historical and present-day lands.   The coefficients on Historical indicate that the historical lands experience 800-950mm of precipitation each year. While the estimates in the unweighted models are statistically insignificant, the weighted models suggest a decrease in precipitation of around 150 mm per year.  These results suggest that more tribes, rather than the populations, experience less precipitation. 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -343,7 +334,7 @@ We compare the mean annual precipitation (mm) in present-day and historical CCEs
 ```
 
 
-We report that the difference between historical and present-day lands are statistically indistinguishable based on our primary specification (Table \ref{tab:precip}).  While the unweighted point estimates on present day are negative, the corresponding estimates on the weighted version .
+
 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
@@ -363,14 +354,13 @@ sg_table(model.shell,
          title = "Precipitation")
 ```
 
-While the evidence for a difference in precipitation across the present-day and historical CCEs is weak, the weighted OLS regressions indicate that the present-day lands experience slightly more precipitation.  This result suggests that there exists a large amount of variation across tribes, and that there are some tribes that occupied more CCEs that experienced less precipitation on some of the lands.
-
 
 ## Wildfire Hazard Potential
 
 
 
-We compare mean Wildfire Hazard Potential (WHP) rating of all cells within a CCE boundary in the present-day and historical lands.  Figure 2b suggests that the present-day lands have a higher wildfire hazard potential.  Table S5 generally confirms that present-day lands have higher wildfire hazard potential compared to historical lands.
+The results in table \ref{tab:whp} suggest that present-day lands have higher wildfire hazard potential (WHP) compared to historical lands.  The coefficients on Historical indicate that the historical lands have an average WHP rating of around 1 on a scale of 1 (very low fire hazard potential) to 5 (very high hazard potential). The results indicate that the present-day lands have a higher WHP than the historical lands by 0.55 points on the index, a 47% increase.  This estimate is robust to several alternative specifications.  In fact, the weighted models suggest an even larger difference suggesting that tribes with larger CCEs were less affected than others.  While wildfire hazard potential is a function of the natural environment, it is also influenced by human modifications of the natural and built environment.  
+
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -394,7 +384,7 @@ We compare mean Wildfire Hazard Potential (WHP) rating of all cells within a CCE
   
 
 ```
-Figure caption: Wildfire hazard potential in historical and present-day CCEs.  While indigenous peoples were concentrated on fewer total CCEs (width of distribution), the mean WHP is higher in the present-day CCEs than the historical.
+
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -408,17 +398,17 @@ model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
 
 sg_table(model.shell,
          dep.name = "Mean Wildfire Hazard Potential",
+         label = "tab:whp",
          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
          title = "Wildfire Hazard Potential")
 ```
 
-Unweighted OLS models suggest that present-day area have higher wildfire hazard potential relative to historical lands.  However, the weighted models find no relationship (Weighted OLS) and even a slight negative relationship (Full Weighted OLS).  These results suggest that there are likely tribes that covered many CCEs that moved to lands with higher wildfire hazard potential.  While wildfire hazard potential is a function of the natural environment, it is also influenced by human modifications of the natural and built environment.  
 
 
 
 ## Oil and Gas Basins
 
-We evaluate access to oil and gas based on the likelihood that a tribe's CCEs lie over subsurface oil and gas.  Our main specification, OLS, in Table S6 (column 1) indicates that present-day lands are less likely to have access to subsurface oil and gas.  Estimating OLS with a binary dependent variable is known as a linear probability model (LPM).  The LPM has two well-known shortcomings: 1) bias when the mass of the distribution lies outside of the unit interval, and 2) heteroskedasticity.  Since we estimate all models with robust standard errors, we should correct for heteroskedasticity.  We estimate a logistic regression (column 5) to assess the robustness of the difference between present-day and historical lands.  The results of the logistic regression indicate that present-day lands have less access to oil and gas supporting the results of our main specification.  However, the results of the weighted OLS (column 2) and the models using all data (columns 3 and 4) are less clear.  
+We evaluate access to oil and gas based on the likelihood that a tribe's CCEs lie over subsurface oil and gas.  Our main specification, OLS, in Table \ref{tab:og_access} (column 1) indicates that present-day lands are 11% [0.20, 0.01] less likely to have access to subsurface oil and gas than the baseline historical lands (60% [0.53, 0.66]).  Estimating OLS with a binary dependent variable is known as a linear probability model (LPM).  The LPM has two well-known shortcomings: 1) bias when the mass of the distribution lies outside of the unit interval, and 2) heteroskedasticity.  Since we estimate all models with robust standard errors, we correct for heteroskedasticity.  We estimate a logistic regression (column 5) to assess the robustness of the difference between present-day and historical lands.  The results of the logistic regression indicate that present-day lands have less access to oil and gas supporting the results of our main specification.  The results are robust to weighting and the sample used.  Although, we note that the estimates of the Full OLS model are not statistically significant.  
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -432,6 +422,7 @@ model.shell[[5]] <- glm_clustered(dep.var,df=data_t1and2_long,family = "binomial
 
 sg_table(model.shell,
          dep.name = "Presence of Subsurface Oil and Gas",
+         label = "tab:og_access",
          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Logit"),
          title = "Oil and Gas Access")
 ```
@@ -439,11 +430,11 @@ sg_table(model.shell,
 
 
 
-## Oil
+## Oil Production
 
-We compare oil production (measured in millions of barrels) between historical and present-day lands, with model specifications providing some evidence that there is less oil production on present-day CCE's. While our primary OLS specification shows an insignificant reduction in oil production (1.23 million barrels), additional model specifications show significant reductions (between 2.59 and 18.43 million barrels). 
+We compare annual oil production (measured in thousands of barrels) between historical and present-day lands, with model specifications providing some evidence that there is less oil production on present-day CCEs (Table \ref{tab:oil_avg}). While our primary OLS specification shows a statistically insignificant reduction in oil production (123 thousand barrels), additional model specifications show significant reductions.  When the full dataset is included, the average oil production of present-day CCEs falls by 334 thousand barrels per year, a 50% reduction from the average across the historical CCEs (783 thousand barrels).
 
-The distributions are highly skewed. <- Jude made this note, I can't see distributions in the PDF so am leaving this here for now.
+
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -456,14 +447,15 @@ model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
 
 sg_table(model.shell,
-         dep.name = "Oil Production (millions of barrels)",
+         dep.name = "Oil Production (billions of barrels)",
+         label = "tab:oil_avg",
          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
          title = "Oil Production")
 ```
 
-## Gas
+## Gas Production
 
-Drawing on the U.S. Department of Agriculture's natural gas production data (measured in ?? cubic feet), we compare gas production between historical and present-day lands.  While our OLS model shows significantly greater (4.29 million cubic feet) gas production on present-day lands, the confidence interval is large and crosses zero.  Additional model specification yield mixed results. Our Full OLS model similarly shows a significant increase in production (5.2 million cubic feet), but the Weighted, Full Weighted OLS, and Tribe Fixed Effects models show insignificant changes in gas production between time periods. This variation suggests that our OLS findings are not especially robust, and that Tribes with larger CCE coverage tend to have higher natural gas production in the present-day, thus influencing unweighted model outcomes.
+Drawing on the U.S. Department of Agriculture's natural gas production data (measured in million cubic feet), we compare gas production between historical and present-day lands.  Our estimates indicate that gas production increased by 4.29 billion cubic feet per year in present-day CCEs up from 6.1 billion cubic feet on the historical CCEs (Table \ref{tab:gas_avg}).  However, these results do not seem to be robust across specifications.  Additional model specification yield mixed results. The Weighted, Full Weighted OLS, and Tribe Fixed Effects models show insignificant changes in gas production between time periods. 
 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
@@ -477,7 +469,8 @@ model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
 
 sg_table(model.shell,
-         dep.name = "Gas Production ??units",
+         dep.name = "Gas Production (millions cubic feet)",
+         label = "tab:gas_avg",
          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
          title = "Gas Production")
 ```
@@ -485,7 +478,7 @@ sg_table(model.shell,
 
 ## Oil and Gas Wells
 
-Utilizing U.S. Geological Survey data on well locations between 1859 - 2005, we evaluate differences in the total number of oil and gas wells between historical and present-day lands. All model specifications indicate that the total number of wells is significantly higher on present-day lands, suggesting that this relationship is robust. Estimates of the average number of additional wells per present-day CCE range from 94.82 (OLS) to 141.38 (Full OLS) compared to historical CCE's.
+Utilizing U.S. Geological Survey data on well locations between 1859 - 2005, we evaluate differences in the total number of oil and gas wells between historical and present-day lands.  Table \ref{tab:og_well} shows the results of the OLS model and indicates that present-day CCEs have 94.82 more wells than historical CCEs.  We find additional evidence of this statistically significant relationship in the Full OLS and Tribe FE models.  While the estimates in the weighted models are not statistically significant, the coefficients agree that presenta-day CCEs have more wells.  
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 model.shell <- vector("list",5)
@@ -499,6 +492,7 @@ model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
 
 sg_table(model.shell,
          dep.name = "Count of Oil and Gas Wells",
+         label = "tab:og_well",
          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
          title = "Oil and Gas Wells")
 ```

@@ -183,6 +183,7 @@ sg_table <- function(model.shell,dep.name,...){
             ci=T,
             intercept.top = T,
             intercept.bottom = F,
+            digits = 2,
             dep.var.caption = str_c("Dependent Variable: ",dep.name),
             #column.labels = col.names,
             model.numbers = T,
