@@ -72,6 +72,24 @@ lme_to_coeftest <- function(lme.object){
   
 }
 
+tidy_to_coeftest <- function(tidy.object){
+  #This function takes an object created with broom::tidy() and converts it 
+  #to a coeftest object that can be directly input into stargazer to produce
+  #regression output tables
+  
+  #Grab the non-variable name columns and coerce to matrix
+  coeftest.object <- as.matrix(tidy.object[,2:5])
+  
+  #Define the dimension names of the matrix
+  dimnames(coeftest.object) <- list(tidy.object$term,
+                                    c("Estimate","Std. Error","t value","Pr(>|t|)"))
+  
+  #Coerce matrix to class coeftest
+  class(coeftest.object) <- 'coeftest'
+  
+  return(coeftest.object)
+}
+
 gamlss_clustered_vcov <- function(gamlss.object,cluster=NA){
   require(gamlss)
   # if(is.na(cluster)){
@@ -101,15 +119,10 @@ gamlss_clustered_vcov <- function(gamlss.object,cluster=NA){
 
 
 
-ols_clustered <- function(dep.var,df,weighted){
-  if(weighted){
-    m.temp <- feols(formula(str_c(dep.var, " ~ time")),
-                    data = df,
-                    weights = ~ wgt) 
-  } else {
-    m.temp <- feols(formula(str_c(dep.var, " ~ time")),
+ols_clustered <- function(dep.var,df){
+  require(broom)
+  m.temp <- feols(formula(str_c(dep.var, " ~ time")),
                     data = df) 
-  }
   
   model.out <- fixest_to_coeftest(m.temp,df)
   
@@ -119,15 +132,26 @@ ols_clustered <- function(dep.var,df,weighted){
   return(list(results=model.out,obs=obs))
 }
 
-feols_clustered <- function(dep.var,df,weighted){
-  if(weighted){
-    m.temp <- feols(formula(str_c(dep.var, " ~ time | tribe")),
-                    data = df,
-                    weights = ~ wgt) 
-  } else {
-    m.temp <- feols(formula(str_c(dep.var, " ~ time | tribe")),
+#dep.var <- "precip"
+#df <- svy_data_t1andt2_long
+ols_weighted <- function(dep.var,df){
+  require(survey)
+  
+  m.temp <- svyglm(formula(str_c(dep.var, " ~ time")),
+                   design = df) 
+ 
+  model.out <- tidy_to_coeftest(tidy(m.temp))
+  
+  obs <- nobs(m.temp)
+  
+  
+  return(list(results=model.out,obs=obs))
+}
+
+feols_clustered <- function(dep.var,df){
+  
+  m.temp <- feols(formula(str_c(dep.var, " ~ time | tribe")),
                     data = df) 
-  }
   
   model.out <- fixest_to_coeftest(m.temp,df)
   
