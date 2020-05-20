@@ -71,7 +71,7 @@ data_long <- data_long %>%
             by=c("tribe","time"))
 
 svy_data_long <- data_long %>% 
-  as_survey_design(ids = tribe,probs = wgt)
+  as_survey_design(ids = tribe,weights = wgt)
 
 data_t1and2_long <- data_t1and2_long %>%
   group_by(tribe,time) %>%
@@ -82,7 +82,7 @@ data_t1and2_long <- data_t1and2_long %>%
             by=c("tribe","time"))
   
 svy_data_t1and2_long <- data_t1and2_long %>% 
-  as_survey_design(ids = tribe,probs = wgt)
+  as_survey_design(ids = tribe,weights = wgt)
 
 source("make_drought_fig.R")
 
