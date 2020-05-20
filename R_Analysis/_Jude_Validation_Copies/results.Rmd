@@ -83,6 +83,9 @@ data_t1and2_long <- data_t1and2_long %>%
   
 svy_data_t1and2_long <- data_t1and2_long %>% 
   as_survey_design(ids = tribe,probs = wgt)
+
+source("make_drought_fig.R")
+
 ```
 
 \newpage
