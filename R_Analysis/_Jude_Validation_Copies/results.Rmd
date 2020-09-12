@@ -1,7 +1,7 @@
 ---
-title: "Appendix: Results"
+title: "Appendix A: Results"
 author: ""
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+#date: "`r format(Sys.time(), '%B %d, %Y')`"
 header-includes:
    - \usepackage{rotating, graphicx}
 output: bookdown::pdf_document2
