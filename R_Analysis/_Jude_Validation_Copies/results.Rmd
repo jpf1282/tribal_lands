@@ -98,7 +98,7 @@ The objective of this supplement is to provide detail on the analysis of County 
 
 # Data Descriptions
 
-We focus on land characteristics that are either durable over long time periods or not heavily impacted by the human inhabitants of the land.  We divide the characteristics into categories: climate, mineral resource access, and national lands. The set of climate characteristics consist of number of extreme temperature days, drought, precipitation, and a measure of wildfire hazard potential.  The set of mineral resource access characteristics include access to oil and gas basins, oil and gas production, and number of wells.  Finally, we assess the proximity of historical and present-day CCEs to federal lands.  The following sections describe the data sources and any processing to construct the variables for analysis.
+We focus on land characteristics that are either durable over long time periods or not heavily impacted by the human inhabitants of the land.  We divide the characteristics into categories: climate, mineral resource access, and national lands. The set of climate characteristics consist of: number of extreme temperature days, drought, precipitation, and a measure of wildfire hazard potential.  The set of mineral resource access characteristics include: access to oil and gas basins, oil and gas production, and number of wells.  Finally, we assess the proximity of historical and present-day CCEs to federal lands.  The following sections describe the data sources and any processing to construct the variables for analysis.
 
 
 
@@ -107,7 +107,7 @@ Table \ref{tab:sum_full} contains summary statistics for the dataset used in the
 
 
 ## Heat
-The National Weather Service's Heat Index incorporates both relative humidity and actual air temperature to describe how hot the temperature feels in degrees Farenheit. We utilize Dahl et al.'s measure of the average number of days per year between 1971 to 2000 that the Heat Index is greater than 100 degrees Farenheit Dahl et al. 2019). 
+The National Weather Service's Heat Index incorporates both relative humidity and actual air temperature to describe how hot the temperature feels in degrees Farenheit. We utilize Dahl et al.'s measure of the average number of days per year between 1971 to 2000 that the Heat Index is greater than 100 degrees Farenheit (Dahl et al. 2019). 
 
 
 ## Drought
@@ -123,7 +123,7 @@ A changing climate is expected to alter wildfire behavior in the US, and particu
 
 
 ## Oil and Gas Basins
-The U.S. Energy Information Administration provides a map of sedimentary basin boundaries within the continental United States. Using this map, we construct a binary variable which describes whether a CCE does or does not overlap an oil or gas basin (U.S. Energy Information Administration, ND).
+The U.S. Energy Information Administration provides a map of sedimentary basin boundaries within the continental United States. Using this map, we construct a binary variable which describes whether a CCE does or does not overlap an oil or gas basin (U.S. Energy Information Administration, n.d.).
 
 
 ## Oil and Gas Production
@@ -240,7 +240,7 @@ sg_table(model.shell,
 
 ## Drought
 
-Table \ref{tab:drought} present the results of the analysis of differences in drought across the historical and present-day lands.  Our variable is the change in drought over time.  The coefficients on Historical indicate that even the historical lands are experiencing more drought.  The coefficients on present-day change indicate that present day lands are becoming even drier.  OLS, Weighted OLS, Full OLS, and Tribe Fixed Effects models all indicate that present-day lands are about twice as dry as historical lands, with point estimates ranging between -0.06 (Weighted OLS) and -0.18 (OLS).  
+Table \ref{tab:drought} present the results of the analysis of differences in drought across the historical and present-day lands.  Our variable is the change in drought over time.  The coefficients on historical indicate that even the historical lands are experiencing more drought.  The coefficients on present-day change indicate that present day lands are becoming even drier.  OLS, Weighted OLS, Full OLS, and Tribe Fixed Effects models all indicate that present-day lands are about twice as dry as historical lands, with point estimates ranging between -0.06 (Weighted OLS) and -0.18 (OLS).  
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 
@@ -541,17 +541,17 @@ Abatzoglou, J. T. (2013). Development of gridded surface meteorological data for
 
 Abatzoglou, J. T., & Williams, A. P. (2016). Impact of anthropogenic climate change on wildfire across western US forests. Proceedings of the National Academy of Sciences, 113(42), 11770–11775. https://doi.org/10.1073/pnas.1607171113
 
-Biewick, Laura R.H., 2008, Areas of historical oil and gas exploration and production in the United States: U.S. Geological Survey Digital Data Series DDS-69-Q.
+Biewick, Laura R.H.. (2008). Areas of historical oil and gas exploration and production in the United States: U.S. Geological Survey Digital Data Series DDS-69-Q.
 
-Dahl, Kristina, Erika Spanger-Siegfried, Rachel Licker, Astrid Caldas, John Abatzoglou, Nicholas Mailloux, Rachel Cleetus, Shana Udvardy, Juan Declet-Barreto, and Pamela Worth. 2019. Killer Heat in the United States: Climate Choices and the Future of Dangerously Hot Days. Cambridge, MA: Union of Concerned Scientists.
+Dahl, Kristina, Erika Spanger-Siegfried, Rachel Licker, Astrid Caldas, John Abatzoglou, Nicholas Mailloux, Rachel Cleetus, Shana Udvardy, Juan Declet-Barreto, and Pamela Worth. (2019). Killer Heat in the United States: Climate Choices and the Future of Dangerously Hot Days. Cambridge, MA: Union of Concerned Scientists.
 
-Dillon, Gregory K. 2018. Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2015-0046-2
+Dillon, Gregory K. (2018). Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2015-0046-2
 
 PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
 
-U.S. Department of Agriculture Economic Research Service, 2019. County-level Oil and Gas Production in the U.S.. Available at: https://www.ers.usda.gov/data-products/county-level-oil-and-gas-production-in-the-us/. 
+U.S. Department of Agriculture Economic Research Service. (2019). County-level Oil and Gas Production in the U.S.. Available at: https://www.ers.usda.gov/data-products/county-level-oil-and-gas-production-in-the-us/. 
 
-U.S. Geological Survey (USGS) Gap Analysis Project (GAP), 2018, Protected Areas Database of the United States (PAD-US): U.S. Geological Survey data release, https://doi.org/10.5066/P955KPLE.
+U.S. Geological Survey (USGS) Gap Analysis Project (GAP). (2018). Protected Areas Database of the United States (PAD-US): U.S. Geological Survey data release, https://doi.org/10.5066/P955KPLE.
 
 U.S. Energy Information Administration, Oil and Gas Exploration, Resources, and Production. (available at https://www.eia.gov/maps/maps.htm).
 
