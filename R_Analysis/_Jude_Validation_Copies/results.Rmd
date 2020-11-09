@@ -507,7 +507,7 @@ screenreg(list(bezi_modelt1t2,ols_clustered_model$results,bezi_model,ols_cluster
 \begin{tabular}{l c c c c }
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
- & \multicolumn{4}{c}{Dependent Variable: Proximity to Public Lands} \\ 
+ & \multicolumn{4}{c}{Dependent Variable: Proximity to Federal Lands} \\ 
 \hline
  & BEZI & Full BEZI & OLS & Full OLS \\
 \hline
