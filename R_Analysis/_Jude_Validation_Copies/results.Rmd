@@ -41,18 +41,41 @@ library(texreg)
 library(clubSandwich)
 library(srvyr)
 library(survey)
+library(janitor)
 
 conflict_prefer("filter", "dplyr")
 conflict_prefer("select", "dplyr")
 
-load("../final_data.Rdata")
-
 source("support_functions.R")
 
+#######################
+#Load data
+load("../final_data.Rdata")
+
+topo <- read_csv("../topo_us.csv") %>%
+  select(FIPS=geoid,elevation=elevation_mean,tri=tri_mean)
+
+# topo <- inner_join(
+#   read_csv("../topo_us.csv") %>%
+#   select(FIPS=geoid,elevation=elevation_mean),
+#   read_csv("../vrml.csv") %>%
+#   clean_names() %>%
+#   mutate(geoid=str_pad(geoid,5,"left","0")) %>%
+#   select(FIPS=geoid,tri=vrml))
+
+soil <- read_csv("../county_soil_stats.csv") %>%
+  clean_names() %>%
+  select(FIPS=fips,soc=soc_mean)
+
+##########
+#Merge topo and soil data
+analysis_ds <- merged_data_record_all_long %>%
+  inner_join(topo) %>%
+  inner_join(soil)
 
 
 #Constructing datasets
-data_long <- distinct(merged_data_record_all_long, tribe, time, FIPS, .keep_all = TRUE) %>%
+data_long <- distinct(analysis_ds, tribe, time, FIPS, .keep_all = TRUE) %>%
   ungroup() %>%
   mutate(tribe = factor(tribe),
          time = factor(time),
@@ -148,6 +171,9 @@ for_summary[[1]] <- data_long %>%
          `Drought`=drt_median,
          `Precipitation`=precip,
          `Wildfire Hazard Potential`=fire_mean,
+         `Elevation`=elevation,
+         `Ruggedness`=tri,
+         `Soil Organic Carbon`=soc,
          `Oil and Gas Basin`=og_basin,
          `Oil Production`=oil_avg,
          `Gas Production`=gas_avg,
@@ -161,6 +187,9 @@ for_summary[[2]] <- data_t1and2_long %>%
          `Drought`=drt_median,
          `Precipitation`=precip,
          `Wildfire Hazard Potential`=fire_mean,
+         `Elevation`=elevation,
+         `Ruggedness`=tri,
+         `Soil Organic Carbon`=soc,
          `Oil and Gas Basin`=og_basin,
          `Oil Production`=oil_avg,
          `Gas Production`=gas_avg,
@@ -369,6 +398,79 @@ sg_table(model.shell,
 ```
 
 
+
+## Elevation
+
+in meters
+
+
+
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "elevation"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long)
+model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long)
+model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
+
+sg_table(model.shell,
+         dep.name = "Elevation",
+         label = "tab:elevation",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Elevation (meters)")
+```
+
+
+## Ruggedness
+
+
+
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "tri"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long)
+model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long)
+model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
+
+sg_table(model.shell,
+         dep.name = "Ruggedness",
+         label = "tab:tri",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Total Ruggedness Index")
+```
+
+
+## Soil Organic Carbon
+
+
+
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "soc"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long)
+model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long)
+model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
+
+sg_table(model.shell,
+         dep.name = "Soil Organic Carbon",
+         label = "tab:soc",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE"),
+         title = "Soil Organic Carbon")
+```
 
 
 ## Oil and Gas Basins
