@@ -1,8 +1,9 @@
 
 
 #Function to coerce fixest object into stargazer table
-fixest_to_coeftest <- function(fixest.object,ds){
+fixest_to_coeftest <- function(fixest.object,ds,clust.var){
   require(fixest)
+  #clust.var should be a vector of variable names
   #Check if arg1 is fixest class
   if(!class(fixest.object)=="fixest"){
     stop("Not a fixest object")
@@ -12,9 +13,9 @@ fixest_to_coeftest <- function(fixest.object,ds){
   df <- fixest.object$coeftable 
   
   if(length(fixest.object$obsRemoved)>0){
-    cluster.var <- ds$tribe[-fixest.object$obsRemoved]
+    cluster.var <- ds[-fixest.object$obsRemoved,clust.var]
   } else {
-    cluster.var <- ds$tribe
+    cluster.var <- ds[,clust.var]
   }
   
   
@@ -119,12 +120,12 @@ gamlss_clustered_vcov <- function(gamlss.object,cluster=NA){
 
 
 
-ols_clustered <- function(dep.var,df){
+ols_clustered <- function(dep.var,df,clust.var){
   require(broom)
   m.temp <- feols(formula(str_c(dep.var, " ~ time")),
                     data = df) 
   
-  model.out <- fixest_to_coeftest(m.temp,df)
+  model.out <- fixest_to_coeftest(m.temp,df,clust.var)
   
   obs <- nobs(m.temp)
   
@@ -153,7 +154,7 @@ feols_clustered <- function(dep.var,df){
   m.temp <- feols(formula(str_c(dep.var, " ~ time | tribe")),
                     data = df) 
   
-  model.out <- fixest_to_coeftest(m.temp,df)
+  model.out <- fixest_to_coeftest(m.temp,df,clust.var = "tribe")
   
   obs <- nobs(m.temp)
   
@@ -167,7 +168,7 @@ glm_clustered <- function(dep.var,df,family){
                   family = family,
                   data = df) 
   
-  model.out <- fixest_to_coeftest(m.temp,df)
+  model.out <- fixest_to_coeftest(m.temp,df,clust.var = "tribe")
   
   obs <- nobs(m.temp)
   
