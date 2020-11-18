@@ -65,7 +65,7 @@ topo <- read_csv("../topo_us.csv") %>%
 
 soil <- read_csv("../county_soil_stats.csv") %>%
   clean_names() %>%
-  select(FIPS=fips,soc=soc_mean)
+  select(FIPS=fips,soc=sand_mean)
 
 ##########
 #Merge topo and soil data
@@ -251,12 +251,11 @@ The results in Table \ref{tab:heat} suggest that the present-day lands experienc
 model.shell <- vector("list",5)
 dep.var <- "h_100_hist"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- glm_clustered(dep.var,df=data_t1and2_long,family = "poisson")
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Days per Year in excess of 100 degrees F",
@@ -279,12 +278,11 @@ Table \ref{tab:drought} present the results of the analysis of differences in dr
 model.shell <- vector("list",5)
 dep.var <- "drt_median"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Median PDSI",
@@ -304,12 +302,11 @@ Table \ref{tab:precip} present the results of the analysis of precipitation acro
 model.shell <- vector("list",5)
 dep.var <- "precip"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Mean Annual Precipitation",
@@ -330,12 +327,11 @@ The results in table \ref{tab:whp} suggest that present-day lands have higher wi
 model.shell <- vector("list",5)
 dep.var <- "fire_mean"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Mean Wildfire Hazard Potential",
@@ -358,12 +354,11 @@ in meters
 model.shell <- vector("list",5)
 dep.var <- "elevation"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Elevation",
@@ -383,12 +378,11 @@ sg_table(model.shell,
 model.shell <- vector("list",5)
 dep.var <- "tri"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Ruggedness",
@@ -408,12 +402,11 @@ sg_table(model.shell,
 model.shell <- vector("list",5)
 dep.var <- "soc"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Soil Organic Carbon",
@@ -433,12 +426,11 @@ Weighted OLS and Full Weighted OLS models show a significant increase in the lik
 model.shell <- vector("list",5)
 dep.var <- "og_basin"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- glm_clustered(dep.var,df=data_t1and2_long,family = "binomial")
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Presence of Subsurface Oil and Gas",
@@ -460,12 +452,11 @@ We compare annual oil production (measured in thousands of barrels) between hist
 model.shell <- vector("list",5)
 dep.var <- "oil_avg"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Oil Production (billions of barrels)",
@@ -483,12 +474,11 @@ Drawing on the U.S. Department of Agriculture's natural gas production data (mea
 model.shell <- vector("list",5)
 dep.var <- "gas_avg"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Gas Production (millions cubic feet)",
@@ -506,12 +496,11 @@ Utilizing U.S. Geological Survey data on well locations between 1859 - 2005, we 
 model.shell <- vector("list",5)
 dep.var <- "og_well_count"
 
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe"))
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe"))
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
 model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-model.shell[[6]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
 
 sg_table(model.shell,
          dep.name = "Count of Oil and Gas Wells",

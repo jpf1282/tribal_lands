@@ -192,7 +192,7 @@ sg_table <- function(model.shell,dep.name,...){
             #title = "Extent of Area Occupied",
             add.lines = list(c("Obs",comma(map_dbl(model.shell,"obs")))),
             float.env = "sidewaystable",
-            notes = c("95\\% confidence intervals in parentheses based on tribe-clustered standard errors."),
+            notes = c("95\\% confidence intervals in parentheses based on twoway-clustered standard errors (tribe and CCE)."),
             notes.align = "l",
             header = F,
             ...)
