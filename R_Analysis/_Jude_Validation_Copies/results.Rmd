@@ -146,11 +146,11 @@ A changing climate is expected to alter wildfire behavior in the US, and particu
 
 ## Elevation
 
-We extract elevation data from an open-source digital elevation model (DEM) accessed via the elevatr package in R (https://cran.r-project.org/web/packages/elevatr/index.html).  The data sources for the package are high resolution gridded elevation estimates from the USGS (https://github.com/tilezen/joerd/blob/master/docs/data-sources.md).  The DEM contains elevation in meters at 100 meter resolution across the US.  We calculate the average elevation across all pixels in the county to construct a mean county elevation.
+We extract elevation data from an open-source digital elevation model (DEM) accessed via the elevatr package in R (Hollister and Shah, 2017).  The data sources for the package are high resolution gridded elevation estimates from the U.S. Geological Survey’s Global Multi-resolution Terrain Elevation Data 2010 (GMTED2010) and Amazon Web Service's Mapzen Terrain Tiles (U.S. Geological Survey and National Geospatial Intelligence Agency, 2010). The DEM contains elevation in meters at 100 meter resolution across the US.  We calculate the average elevation across all pixels in the county to construct a mean county elevation.
 
 ## Ruggedness
 
-We calculate a ruggedness index based on the digital elevation model.  We use the *raster* package in R, which states that the Total Ruggedness Index is “... the mean of the absolute differences between the value of a cell [elevation] and the value of its 8 surrounding cells (Wilson et al., 2007).”  The ruggedness is calculated at approximately 100 meter resolution for every county.  In each county, we calculate the mean Total Ruggedness Index for consistency with the tribal boundary data and other measurements in the analysis.
+We calculate a ruggedness index based on the digital elevation model.  We use the *raster* package in R (Hijmans, 2020), which states that the Total Ruggedness Index is “... the mean of the absolute differences between the value of a cell [elevation] and the value of its 8 surrounding cells (Wilson et al., 2007).”  The ruggedness is calculated at approximately 100 meter resolution for every county.  In each county, we calculate the mean Total Ruggedness Index for consistency with the tribal boundary data and other measurements in the analysis.
 
 
 
@@ -599,11 +599,17 @@ Dahl, Kristina, Erika Spanger-Siegfried, Rachel Licker, Astrid Caldas, John Abat
 
 Dillon, Gregory K. (2018). Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2015-0046-2
 
+Hijmans, Robert J. (2020). raster: Geographic Data Analysis and Modeling. R package version 3.1-5. https://CRAN.R-project.org/package=raster
+
+Hollister, J.W., Tarak Shah (2017). elevatr: Access Elevation Data from Various APIs. https://CRAN.R-project.org/package=elevatr.
+
 PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
 
 U.S. Department of Agriculture Economic Research Service. (2019). County-level Oil and Gas Production in the U.S.. Available at: https://www.ers.usda.gov/data-products/county-level-oil-and-gas-production-in-the-us/. 
 
 U.S. Geological Survey (USGS) Gap Analysis Project (GAP). (2018). Protected Areas Database of the United States (PAD-US): U.S. Geological Survey data release, https://doi.org/10.5066/P955KPLE.
+
+U.S. Geological Survey (USGS) and National Geospatial Intelligence Agency (NGA). (2010). Global Multi-resolution Terrain Elevation Data 2010. Available at: https://www.usgs.gov/core-science-systems/eros/coastal-changes-and-impacts/gmted2010?qt-science_support_page_related_con=0#qt-science_support_page_related_con
 
 U.S. Energy Information Administration, Oil and Gas Exploration, Resources, and Production. (available at https://www.eia.gov/maps/maps.htm).
 
