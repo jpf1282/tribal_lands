@@ -154,7 +154,7 @@ feols_clustered <- function(dep.var,df){
   m.temp <- feols(formula(str_c(dep.var, " ~ time | tribe")),
                     data = df) 
   
-  model.out <- fixest_to_coeftest(m.temp,df,clust.var = "tribe")
+  model.out <- fixest_to_coeftest(m.temp,df,clust.var = c("tribe","FIPS"))
   
   obs <- nobs(m.temp)
   

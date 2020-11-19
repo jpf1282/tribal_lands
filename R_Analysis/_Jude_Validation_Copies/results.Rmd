@@ -144,6 +144,15 @@ Oregon State University's PRISM Climate Group calcualtes average precipitation (
 ## Wildfire Hazard Potential
 A changing climate is expected to alter wildfire behavior in the US, and particularly in the Western US (Abazoglou and Williams, 2016; Westerling et al. 2006).  We construct a measure of wildfire risk using a gridded (270 meter) index called Wildfire Hazard Potential (WHP) (Dillon, 2018).  The WHP is a discrete scale from 1 (very low fire hazard potential) to 5 (very high hazard potential) designed to inform fuel planning efforts.  We choose this measure because it synthesizes many ecological, geographic, and atmospheric factors into a single index. We calculate the mean WHP of all grid cells within the county boundary.
 
+## Elevation
+
+We extract elevation data from an open-source digital elevation model (DEM) accessed via the elevatr package in R (https://cran.r-project.org/web/packages/elevatr/index.html).  The data sources for the package are high resolution gridded elevation estimates from the USGS (https://github.com/tilezen/joerd/blob/master/docs/data-sources.md).  The DEM contains elevation in meters at 100 meter resolution across the US.  We calculate the average elevation across all pixels in the county to construct a mean county elevation.
+
+## Ruggedness
+
+We calculate a ruggedness index based on the digital elevation model.  We use the *raster* package in R, which states that the Total Ruggedness Index is “... the mean of the absolute differences between the value of a cell [elevation] and the value of its 8 surrounding cells (Wilson et al., 2007).”  The ruggedness is calculated at approximately 100 meter resolution for every county.  In each county, we calculate the mean Total Ruggedness Index for consistency with the tribal boundary data and other measurements in the analysis.
+
+
 
 ## Oil and Gas Basins
 The U.S. Energy Information Administration provides a map of sedimentary basin boundaries within the continental United States. Using this map, we construct a binary variable which describes whether a CCE does or does not overlap an oil or gas basin (U.S. Energy Information Administration, n.d.).
@@ -173,7 +182,7 @@ for_summary[[1]] <- data_long %>%
          `Wildfire Hazard Potential`=fire_mean,
          `Elevation`=elevation,
          `Ruggedness`=tri,
-         `Soil Organic Carbon`=soc,
+         #`Soil Organic Carbon`=soc,
          `Oil and Gas Basin`=og_basin,
          `Oil Production`=oil_avg,
          `Gas Production`=gas_avg,
@@ -189,7 +198,7 @@ for_summary[[2]] <- data_t1and2_long %>%
          `Wildfire Hazard Potential`=fire_mean,
          `Elevation`=elevation,
          `Ruggedness`=tri,
-         `Soil Organic Carbon`=soc,
+         #`Soil Organic Carbon`=soc,
          `Oil and Gas Basin`=og_basin,
          `Oil Production`=oil_avg,
          `Gas Production`=gas_avg,
@@ -219,7 +228,7 @@ stargazer(for_summary[[2]],
 
 # Methods
 
-We employ several statistical methods to test whether characteristics of the historical lands differ from the present-day lands.  Our primary method to compare the historical and present-day CCEs is a linear regression of the CCE characteristic as a function of a binary indicator for present-day lands (and an intercept), which amounts to simple ANOVA test of whether the means are equal in the historical and present-day CCEs.  The intercept in these models is the mean of the CCE characteristic in the historial period while the present-day coefficient represents the change from the historical to the present-day period.  All statistical tests are conducted using cluster-robust standard errors, which account for heteroskedasticity and serial correlation that may exist within a tribe due to the proximity of CCEs within a tribe's historical or present-day extent.  Tribal lands may overlap creating correlation within CCEs across tribes.  We include an alternative specification with two-way clustered standard errors accounting for possible correlation within counties (across tribes) and within tribes.
+We employ several statistical methods to test whether characteristics of the historical lands differ from the present-day lands.  Our primary method to compare the historical and present-day CCEs is a linear regression of the CCE characteristic as a function of a binary indicator for present-day lands (and an intercept), which amounts to simple ANOVA test of whether the means are equal in the historical and present-day CCEs.  The intercept in these models is the mean of the CCE characteristic in the historial period while the present-day coefficient represents the change from the historical to the present-day period.  All statistical tests are conducted using cluster-robust standard errors, which account for heteroskedasticity and serial correlation that may exist within a tribe and within CCEs.  Observations within a tribe may be correlated because of the proximity of CCEs within a tribe's historical or present-day extent.  Tribal lands may also overlap CCEs creating correlation within CCEs across tribes.  
 
 We assess the robustness of our estimate using several alternative model specifications and two forms of the data: 1) only tribes with records in the present-day and historical period, and 2) all tribes including those with records in only one time period (denoted Full in the following tables).  In each table below, we present a set of the following models:
 
@@ -344,9 +353,7 @@ sg_table(model.shell,
 
 ## Elevation
 
-in meters
-
-
+The results in table \ref{tab:elevation} suggest that the elevation of present-day lands is greater than historical lands.  The coefficients on Historical indicate that the historical lands have an average CCE elevation of 541.46 meters. The results indicate that the present-day lands are an average of 196.43 meters higher than the historical lands, a 36% increase.  While we find similar results with the Full OLS model, the weighted models and Tribe FE model indicate no or a small decrease in elevation. These  results suggests that tribes with a broader historical spread across many CCE's experienced a small decrease in elevation.  The weighted versions of the model compare across tribes rather than the population and extent of the peoples in the tribe.
 
 
 
@@ -370,7 +377,7 @@ sg_table(model.shell,
 
 ## Ruggedness
 
-
+The results in table \ref{tab:tri} suggest that present-day lands are more rugged than historical lands.  The coefficients on Historical indicate that the historical lands have an average CCE ruggedness index of 5.36. The results indicate that the present-day lands have an average ruggedness index 3.14 points higher than the historical lands, a 59% increase.  While we find similar results with the Full OLS model, the weighted models and Tribe FE model indicate no difference between historical and present-day ruggedness. 
 
 
 
@@ -392,27 +399,27 @@ sg_table(model.shell,
 ```
 
 
-## Soil Organic Carbon
+<!-- ## Soil Organic Carbon -->
 
-
+<!-- The results in table \ref{tab:elevation} suggest that the elevation of present-day lands is greater than historical lands.  The coefficients on Historical indicate that the historical lands have an average CCE elevation of 541.46 meters. The results indicate that the present-day lands are an average of 196.43 meters higher than the historical lands, a 36% increase.  While we find similar results with the Full OLS model, the weighted models and Tribe FE model indicate no or a small decrease in elevation. These  results suggests that tribes with a broader historical spread across many CCE's experienced a small decrease in elevation. -->
 
 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
-model.shell <- vector("list",5)
-dep.var <- "soc"
-
-model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
-model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
-model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
-model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-
-sg_table(model.shell,
-         dep.name = "Soil Organic Carbon",
-         label = "tab:soc",
-         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
-         title = "Soil Organic Carbon")
+# model.shell <- vector("list",5)
+# dep.var <- "soc"
+# 
+# model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
+# model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
+# model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
+# model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
+# model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
+# 
+# sg_table(model.shell,
+#          dep.name = "Soil Organic Carbon",
+#          label = "tab:soc",
+#          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
+#          title = "Soil Organic Carbon")
 ```
 
 
@@ -602,7 +609,7 @@ U.S. Energy Information Administration, Oil and Gas Exploration, Resources, and 
 
 Westerling, A. L., Hidalgo, H. G., Cayan, D. R., & Swetnam, T. W. (2006). Warming and Earlier Spring Increase Western U.S. Forest Wildfire Activity. Science, 313(5789), 940–943. https://doi.org/10.1126/science.1128834
 
-
+Wilson, M.F.J., O'Connell, B., Brown, C., Guinan, J.C., Grehan, A.J., 2007. Multiscale terrain analysis of multibeam bathymetry data for habitat mapping on the continental slope. Marine Geodesy 30: 3-35.
 
 
 
