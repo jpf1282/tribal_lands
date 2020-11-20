@@ -153,7 +153,6 @@ We extract elevation data from an open-source digital elevation model (DEM) acce
 We calculate a ruggedness index based on the digital elevation model.  We use the *raster* package in R (Hijmans, 2020), which states that the Total Ruggedness Index is “... the mean of the absolute differences between the value of a cell [elevation] and the value of its 8 surrounding cells (Wilson et al., 2007).”  The ruggedness is calculated at approximately 100 meter resolution for every county.  In each county, we calculate the mean Total Ruggedness Index for consistency with the tribal boundary data and other measurements in the analysis.
 
 
-
 ## Oil and Gas Basins
 The U.S. Energy Information Administration provides a map of sedimentary basin boundaries within the continental United States. Using this map, we construct a binary variable which describes whether a CCE does or does not overlap an oil or gas basin (U.S. Energy Information Administration, n.d.).
 
