@@ -153,6 +153,10 @@ We extract elevation data from an open-source digital elevation model (DEM) acce
 We calculate a ruggedness index based on the digital elevation model.  We use the *raster* package in R (Hijmans, 2020), which states that the Total Ruggedness Index is “... the mean of the absolute differences between the value of a cell [elevation] and the value of its 8 surrounding cells (Wilson et al., 2007).”  The ruggedness is calculated at approximately 100 meter resolution for every county.  In each county, we calculate the mean Total Ruggedness Index for consistency with the tribal boundary data and other measurements in the analysis.
 
 
+## Soil Organic Carbon 
+Ramcharan et. al. (2017) utilize random forest and gradient boosting algorithms to predict soil properties across the United States (Ramcharan et al. 2017), which are then aggregated to the county-level using the data processing technique described by Kane et al (2020). We report changes in soil organic carbon (SOC), measured in percent organic carbon, between historical and present-day lands in this appendix. However, soil health - and proxies for it, such as SOC - is dynamically influenced by the interaction between natural processes and human activities (Stevens, 2018; Haddaway et al 2017). For this reason, the measure itself is not sufficiently durable over time to be an appropriate selection for our primary research design, and is therefore excluded from the manuscript. We include results in the appendix as a starting point for future research which may investigate soil- and agrictulure-focused research questions in greater depth.
+
+
 ## Oil and Gas Basins
 The U.S. Energy Information Administration provides a map of sedimentary basin boundaries within the continental United States. Using this map, we construct a binary variable which describes whether a CCE does or does not overlap an oil or gas basin (U.S. Energy Information Administration, n.d.).
 
@@ -168,8 +172,6 @@ The U.S. Geological Survey reports all known well locations across the continent
 ## Federal Lands
 The U.S. Geological Survey's Protected Lands Database of the U.S. (PAD-US) is a spatial inventory of all formally protected lands. We select only lands protected by the Federal Government (e.g. national parks, national forests, etc.). We calculate total proportion of a CCE's land area which is designated as any type of federally protected area (U.S. Geological Survey (USGS) Gap Analysis Project (GAP), 2018).
 
-## Soil Organic Carbon 
-Ramcharan et. al. 2017 utilize random forest and gradient boosting algorithms to predict soil properties across the United States (Ramcharan et al. 2017), which are then aggregated to the county-level using the data processing technique described by Kane et al. We report changes in soil organic carbon (SOC), measured in percent organic carbon, between historical and present-day lands in this appendix. However, soil health - and proxies for it, such as SOC - is dynamically influenced by the interaction between natural processes and human activities (Stevens, 2018; Haddaway et al 2017). For this reason, the measure itself is not sufficiently durable over time to be an appropriate selection for our primary research design, and is therefore excluded from the manuscript. We include results in the appendix as a starting point for future research which may investigate soil- and agrictulure-focused research questions in greater depth.
 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
@@ -184,7 +186,7 @@ for_summary[[1]] <- data_long %>%
          `Wildfire Hazard Potential`=fire_mean,
          `Elevation`=elevation,
          `Ruggedness`=tri,
-         #`Soil Organic Carbon`=soc,
+         `Soil Organic Carbon`=soc,
          `Oil and Gas Basin`=og_basin,
          `Oil Production`=oil_avg,
          `Gas Production`=gas_avg,
@@ -200,7 +202,7 @@ for_summary[[2]] <- data_t1and2_long %>%
          `Wildfire Hazard Potential`=fire_mean,
          `Elevation`=elevation,
          `Ruggedness`=tri,
-         #`Soil Organic Carbon`=soc,
+         `Soil Organic Carbon`=soc,
          `Oil and Gas Basin`=og_basin,
          `Oil Production`=oil_avg,
          `Gas Production`=gas_avg,
@@ -401,6 +403,32 @@ sg_table(model.shell,
 ```
 
 
+
+## Soil Organic Carbon
+
+The results in Table \ref{tab:soc} provide mixed evidence that the percent organic carbon is greater in present-day lands compared to historical lands. Our primary OLS model indicates that present-day lands have 8.25 percentage points higher SOC content than historical lands. While the Full OLS model yields similar results in direction and magnitude, both Weighted OLS and Tribe FE models suggest that the magnitude of increase was relatively small and insignificant. The Full Weighted OLS model suggests that SOC levels are lower in the present day. We do not report these results in the manuscript because the measure of organic carbon is not durable over time (see notes in Data Description).
+
+
+
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+model.shell <- vector("list",5)
+dep.var <- "soc"
+
+model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
+model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
+model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
+model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
+model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
+
+sg_table(model.shell,
+         dep.name = "Soil Organic Carbon",
+         label = "tab:soc",
+         column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
+         title = "Soil Organic Carbon")
+```
+
+
 ## Oil and Gas Basins
 
 We evaluate access to oil and gas based on the likelihood that a tribe's CCEs lie over subsurface oil and gas.  Our main specification, OLS, in Table \ref{tab:og_access} (column 1) indicates that present-day lands are 11% [0.20, 0.01] less likely to have access to subsurface oil and gas than the baseline historical lands (60% [0.53, 0.66]). Estimating OLS with a binary dependent variable is known as a linear probability model (LPM).  The LPM has two well-known shortcomings: 1) bias when the mass of the distribution lies outside of the unit interval, and 2) heteroskedasticity.  Since we estimate all models with robust standard errors, we correct for heteroskedasticity.  We estimate a logistic regression (column 5) to assess the robustness of the difference between present-day and historical lands.  The results of the logistic regression indicate that present-day lands have less access to oil and gas supporting the results of our main specification.  
@@ -559,28 +587,6 @@ Obs.           & 8165                & 10314              &  8165   &    10314  
 
 
 
-## Soil Organic Carbon 
-
-The results in table \ref{tab:elevation} suggest that the elevation of present-day lands is greater than historical lands.  The coefficients on Historical indicate that the historical lands have an average CCE elevation of 541.46 meters. The results indicate that the present-day lands are an average of 196.43 meters higher than the historical lands, a 36% increase.  While we find similar results with the Full OLS model, the weighted models and Tribe FE model indicate no or a small decrease in elevation. These  results suggests that tribes with a broader historical spread across many CCE's experienced a small decrease in elevation. 
-
-
-
-```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
- model.shell <- vector("list",5)
- dep.var <- "soc"
- 
- model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
- model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
- model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
- model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
- model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
- 
- sg_table(model.shell,
-          dep.name = "Soil Organic Carbon",
-          label = "tab:soc",
-          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
-          title = "Soil Organic Carbon")
-```
 
 \newpage
 # References
@@ -601,7 +607,7 @@ Hijmans, Robert J. (2020). raster: Geographic Data Analysis and Modeling. R pack
 
 Hollister, J.W., Tarak Shah (2017). elevatr: Access Elevation Data from Various APIs. https://CRAN.R-project.org/package=elevatr.
 
-Daniel, K., M. A. Bradford, E. Fuller, E. E. Oldfield, and S. A. Wood. Unpublished. “Soil Organic Matter Effects on US Maize Production and Crop Insurance Payouts under Drought.,” August. https://agrirxiv.org/search-details/.
+Daniel, K., Bradford, M. A., Fuller, E., Oldfield, E. E., & Wood, S. A. (2020). Soil organic matter effects on US maize production and crop insurance payouts under drought. Working Paper. 10.31220/agriRxiv.2020.00018
 
 PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
 

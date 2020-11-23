@@ -42,7 +42,8 @@ data_t1and2_long <- filter(data_long, tribe %in% tribes_time1and2_lst$tribe)
 heat.plot <- ggplot(data_t1and2_long, aes(time, h_100_hist, colour = time)) +
   geom_boxplot(varwidth = T) +
   geom_quasirandom(alpha = 1/10, varwidth = TRUE) +
-  scale_y_continuous(breaks = seq(0, 60, by=20), labels = c("0", "20", "40", "Days Above 100 F   60")) +
+  #scale_y_continuous(breaks = seq(0, 60, by=20), labels = c("0", "20", "40", "Days Above 100 F   60")) +
+  scale_y_log10(breaks = c(1,3,10,30), labels = c("1", "3", "10", "Days Above 100 F   30")) +
   scale_colour_manual(values = c('#E0E022','#ff0000'),aesthetics = c("colour", "fill")) +
   theme_minimal() +
   xlab("") +
