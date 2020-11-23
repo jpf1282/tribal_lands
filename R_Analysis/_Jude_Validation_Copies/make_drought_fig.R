@@ -51,6 +51,20 @@ heat.plot <- ggplot(data_t1and2_long, aes(time, h_100_hist, colour = time)) +
                               "time 2" = "Present-day")) +
   theme(legend.position = "none")
 
+# Heat Days LOG Count
+heat.log.plot <- ggplot(data_t1and2_long, aes(time, h_100_hist, colour = time)) +
+  geom_boxplot(varwidth = T) +
+  geom_quasirandom(alpha = 3/10, varwidth = TRUE) +
+  #scale_y_continuous(breaks = seq(0, 60, by=20), labels = c("0", "20", "40", "Days Above 100 F   60")) +
+  scale_y_log10(breaks = c(1,3,10,30,90), labels = c("1", "3", "10", "30", "90")) +
+  scale_colour_manual(values = c('#E0E022','#ff0000'),aesthetics = c("colour", "fill")) +
+  theme_minimal() +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels = c("time 1" = "Historical",
+                              "time 2" = "Present-day")) +
+  theme(legend.position = "none")
+
 # Heat Days Histogram (exploring)
 ggplot(data_t1and2_long, aes(x=log(h_100_hist), fill=time)) +
   geom_histogram(position="dodge")
