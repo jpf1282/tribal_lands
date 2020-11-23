@@ -18,6 +18,7 @@ ggsave(plot=drought.plot,filename = "drought_boxplot.pdf")
 
 
 # Katie's Added Plots -----------------------------------------------------
+
 # library(ggbeeswarm)
 # library(dplyr)
 # 
