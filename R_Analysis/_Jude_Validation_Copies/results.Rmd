@@ -168,6 +168,9 @@ The U.S. Geological Survey reports all known well locations across the continent
 ## Federal Lands
 The U.S. Geological Survey's Protected Lands Database of the U.S. (PAD-US) is a spatial inventory of all formally protected lands. We select only lands protected by the Federal Government (e.g. national parks, national forests, etc.). We calculate total proportion of a CCE's land area which is designated as any type of federally protected area (U.S. Geological Survey (USGS) Gap Analysis Project (GAP), 2018).
 
+## Soil Organic Carbon 
+Ramcharan et. al. 2017 utilize random forest and gradient boosting algorithms to predict soil properties across the United States (Ramcharan et al. 2017), which are then aggregated to the county-level using the data processing technique described by Kane et al. We report changes in soil organic carbon (SOC), measured in percent organic carbon, between historical and present-day lands in this appendix. However, soil health - and proxies for it, such as SOC - is dynamically influenced by the interaction between natural processes and human activities (Stevens, 2018; Haddaway et al 2017). For this reason, the measure itself is not sufficiently durable over time to be an appropriate selection for our primary research design, and is therefore excluded from the manuscript. We include results in the appendix as a starting point for future research which may investigate soil- and agrictulure-focused research questions in greater depth.
+
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
 
@@ -398,30 +401,6 @@ sg_table(model.shell,
 ```
 
 
-<!-- ## Soil Organic Carbon -->
-
-<!-- The results in table \ref{tab:elevation} suggest that the elevation of present-day lands is greater than historical lands.  The coefficients on Historical indicate that the historical lands have an average CCE elevation of 541.46 meters. The results indicate that the present-day lands are an average of 196.43 meters higher than the historical lands, a 36% increase.  While we find similar results with the Full OLS model, the weighted models and Tribe FE model indicate no or a small decrease in elevation. These  results suggests that tribes with a broader historical spread across many CCE's experienced a small decrease in elevation. -->
-
-
-
-```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
-# model.shell <- vector("list",5)
-# dep.var <- "soc"
-# 
-# model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
-# model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
-# model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
-# model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
-# model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
-# 
-# sg_table(model.shell,
-#          dep.name = "Soil Organic Carbon",
-#          label = "tab:soc",
-#          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
-#          title = "Soil Organic Carbon")
-```
-
-
 ## Oil and Gas Basins
 
 We evaluate access to oil and gas based on the likelihood that a tribe's CCEs lie over subsurface oil and gas.  Our main specification, OLS, in Table \ref{tab:og_access} (column 1) indicates that present-day lands are 11% [0.20, 0.01] less likely to have access to subsurface oil and gas than the baseline historical lands (60% [0.53, 0.66]). Estimating OLS with a binary dependent variable is known as a linear probability model (LPM).  The LPM has two well-known shortcomings: 1) bias when the mass of the distribution lies outside of the unit interval, and 2) heteroskedasticity.  Since we estimate all models with robust standard errors, we correct for heteroskedasticity.  We estimate a logistic regression (column 5) to assess the robustness of the difference between present-day and historical lands.  The results of the logistic regression indicate that present-day lands have less access to oil and gas supporting the results of our main specification.  
@@ -580,12 +559,30 @@ Obs.           & 8165                & 10314              &  8165   &    10314  
 
 
 
+## Soil Organic Carbon 
+
+The results in table \ref{tab:elevation} suggest that the elevation of present-day lands is greater than historical lands.  The coefficients on Historical indicate that the historical lands have an average CCE elevation of 541.46 meters. The results indicate that the present-day lands are an average of 196.43 meters higher than the historical lands, a 36% increase.  While we find similar results with the Full OLS model, the weighted models and Tribe FE model indicate no or a small decrease in elevation. These  results suggests that tribes with a broader historical spread across many CCE's experienced a small decrease in elevation. 
 
 
 
+```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
+ model.shell <- vector("list",5)
+ dep.var <- "soc"
+ 
+ model.shell[[1]] <- ols_clustered(dep.var,df=data_t1and2_long,clust.var = c("tribe","FIPS"))
+ model.shell[[2]] <- ols_weighted(dep.var,df=svy_data_t1and2_long)
+ model.shell[[3]] <- ols_clustered(dep.var,df=data_long,clust.var = c("tribe","FIPS"))
+ model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
+ model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
+ 
+ sg_table(model.shell,
+          dep.name = "Soil Organic Carbon",
+          label = "tab:soc",
+          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
+          title = "Soil Organic Carbon")
+```
 
-
-
+\newpage
 # References
 
 Abatzoglou, J. T. (2013). Development of gridded surface meteorological data for ecological applications and modelling. International Journal of Climatology, 33(1), 121–131. https://doi.org/10.1002/joc.3413
@@ -598,11 +595,19 @@ Dahl, Kristina, Erika Spanger-Siegfried, Rachel Licker, Astrid Caldas, John Abat
 
 Dillon, Gregory K. (2018). Wildfire Hazard Potential (WHP) for the conterminous United States (270-m GRID), version 2018 classified. 2nd Edition. Fort Collins, CO: Forest Service Research Data Archive. https://doi.org/10.2737/RDS-2015-0046-2
 
+Haddaway, Neal R., Katarina Hedlund, Louise E. Jackson, Thomas Kätterer, Emanuele Lugato, Ingrid K. Thomsen, Helene B. Jørgensen, and Per-Erik Isberg. 2017. “How Does Tillage Intensity Affect Soil Organic Carbon? A Systematic Review.” Environmental Evidence 6 (1): 30. https://doi.org/10.1186/s13750-017-0108-9.
+
 Hijmans, Robert J. (2020). raster: Geographic Data Analysis and Modeling. R package version 3.1-5. https://CRAN.R-project.org/package=raster
 
 Hollister, J.W., Tarak Shah (2017). elevatr: Access Elevation Data from Various APIs. https://CRAN.R-project.org/package=elevatr.
 
+Daniel, K., M. A. Bradford, E. Fuller, E. E. Oldfield, and S. A. Wood. Unpublished. “Soil Organic Matter Effects on US Maize Production and Crop Insurance Payouts under Drought.,” August. https://agrirxiv.org/search-details/.
+
 PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
+
+Ramcharan, Amanda, Tomislav Hengl, Travis Nauman, Colby Brungard, Sharon Waltman, Skye Wills, and James Thompson. 2018. “Soil Property and Class Maps of the Conterminous United States at 100-Meter Spatial Resolution.” Soil Science Society of America Journal 82 (1): 186–201. https://doi.org/10.2136/sssaj2017.04.0122.
+
+Stevens, Andrew W. 2018. “Review: The Economics of Soil Health.” Food Policy 80 (October): 1–9. https://doi.org/10.1016/j.foodpol.2018.08.005.
 
 U.S. Department of Agriculture Economic Research Service. (2019). County-level Oil and Gas Production in the U.S.. Available at: https://www.ers.usda.gov/data-products/county-level-oil-and-gas-production-in-the-us/. 
 
