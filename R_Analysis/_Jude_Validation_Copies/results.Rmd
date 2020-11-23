@@ -154,7 +154,7 @@ We calculate a ruggedness index based on the digital elevation model.  We use th
 
 
 ## Soil Organic Carbon 
-Ramcharan et. al. (2017) utilize random forest and gradient boosting algorithms to predict soil properties across the United States (Ramcharan et al. 2017), which are then aggregated to the county-level using the data processing technique described by Kane et al (2020). We report changes in soil organic carbon (SOC), measured in percent organic carbon, between historical and present-day lands in this appendix. However, soil health - and proxies for it, such as SOC - is dynamically influenced by the interaction between natural processes and human activities (Stevens, 2018; Haddaway et al 2017). For this reason, the measure itself is not sufficiently durable over time to be an appropriate selection for our primary research design, and is therefore excluded from the manuscript. We include results in the appendix as a starting point for future research which may investigate soil- and agrictulure-focused research questions in greater depth.
+Ramcharan et. al. (2017) utilize random forest and gradient boosting algorithms to predict soil properties across the United States (Ramcharan et al. 2017), which are then aggregated to the county-level using the data processing technique described by Kane et al. (2020). We report changes in soil organic carbon (SOC), measured in percent organic carbon, between historical and present-day lands in this appendix. However, soil health - and proxies for it, such as SOC - is dynamically influenced by the interaction between natural processes and human activities (Stevens, 2018; Haddaway et al 2017). For this reason, the measure itself is not sufficiently durable over time to be an appropriate selection for our primary research design, and is therefore excluded from the manuscript. We include results in the appendix as a starting point for future research which may investigate soil- and agrictulure-focused research questions in greater depth.
 
 
 ## Oil and Gas Basins
@@ -607,7 +607,7 @@ Hijmans, Robert J. (2020). raster: Geographic Data Analysis and Modeling. R pack
 
 Hollister, J.W., Tarak Shah (2017). elevatr: Access Elevation Data from Various APIs. https://CRAN.R-project.org/package=elevatr.
 
-Daniel, K., Bradford, M. A., Fuller, E., Oldfield, E. E., & Wood, S. A. (2020). Soil organic matter effects on US maize production and crop insurance payouts under drought. Working Paper. 10.31220/agriRxiv.2020.00018
+Kane, D., Bradford, M. A., Fuller, E., Oldfield, E. E., & Wood, S. A. (2020). Soil organic matter effects on US maize production and crop insurance payouts under drought. Working Paper. 10.31220/agriRxiv.2020.00018
 
 PRISM Climate Group, Northwest Alliance for Computational Science and Engineering, PRISM Climate Data, (available at http://prism.oregonstate.edu/).
 
