@@ -79,8 +79,8 @@ data_long <- distinct(analysis_ds, tribe, time, FIPS, .keep_all = TRUE) %>%
   ungroup() %>%
   mutate(tribe = factor(tribe),
          time = factor(time),
-         oil_avg = oil_avg/1000,
-         gas_avg = gas_avg/1000) 
+         oil_avg = oil_avg/1000,   #converting to thousands
+         gas_avg = gas_avg/1000000)   #converting raw data in thousands to billions
 
 data_t1and2_long <- filter(data_long, tribe %in% tribes_time1and2_lst$tribe)
 
@@ -158,7 +158,7 @@ The U.S. Energy Information Administration provides a map of sedimentary basin b
 
 
 ## Oil and Gas Production
-The U.S. Department of Agriculture reports gross withdrawls of oil and gas at the county level between 2000 and 2011. We take the average count of barrels of oil produced and million cubic feet of natural gas extracted over this time period (U.S. Department of Agriculture Economic Research Service, 2019). 
+The U.S. Department of Agriculture reports gross withdrawls of oil and gas at the county level between 2000 and 2011. We take the average count of barrels of oil produced (thousands) and natural gas extracted (billion cubic feet) over this time period (U.S. Department of Agriculture Economic Research Service, 2019). 
 
 
 ## Oil and Gas Wells
@@ -444,7 +444,7 @@ model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
 
 sg_table(model.shell,
-         dep.name = "Oil Production (billions of barrels)",
+         dep.name = "Oil Production (thousands of barrels)",
          label = "tab:oil_avg",
          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
          title = "Oil Production")
@@ -452,7 +452,7 @@ sg_table(model.shell,
 
 ## Gas Production
 
-Drawing on the U.S. Department of Agriculture's natural gas production data (measured in million cubic feet), we compare gas production between historical and present-day lands.  Our estimates indicate that gas production increased by 4.29 billion cubic feet per year in present-day CCEs up from 6.1 billion cubic feet on the historical CCEs (Table \ref{tab:gas_avg}).  However, these results do not seem to be robust across specifications.  Additional model specification yield mixed results. The Weighted, Full Weighted OLS, and Tribe Fixed Effects models show insignificant changes in gas production between time periods. 
+Drawing on the U.S. Department of Agriculture's natural gas production data (measured in billion cubic feet), we compare gas production between historical and present-day lands.  Our estimates indicate that gas production increased by 4.29 billion cubic feet per year in present-day CCEs up from 6.1 billion cubic feet on the historical CCEs (Table \ref{tab:gas_avg}).  However, these results do not seem to be robust across specifications.  Additional model specification yield mixed results. The Weighted, Full Weighted OLS, and Tribe Fixed Effects models show insignificant changes in gas production between time periods. 
 
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE, results='asis'}
@@ -466,7 +466,7 @@ model.shell[[4]] <- ols_weighted(dep.var,df=svy_data_long)
 model.shell[[5]] <- feols_clustered(dep.var,df=data_t1and2_long)
 
 sg_table(model.shell,
-         dep.name = "Gas Production (millions cubic feet)",
+         dep.name = "Gas Production (billions cubic feet)",
          label = "tab:gas_avg",
          column.labels = c("OLS","Weighted OLS","Full OLS","Full Weighted OLS","Tribe FE","OLS 2way"),
          title = "Gas Production")
