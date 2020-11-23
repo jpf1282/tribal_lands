@@ -19,6 +19,22 @@ ggsave(plot=drought.plot,filename = "drought_boxplot.pdf")
 
 # Katie's Added Plots -----------------------------------------------------
 library(ggbeeswarm)
+library(dplyr)
+
+#Merge topo and soil data
+analysis_ds <- merged_data_record_all_long #%>%
+  #inner_join(topo) %>%
+  #inner_join(soil)
+
+
+#Constructing datasets
+data_long <- distinct(analysis_ds, tribe, time, FIPS, .keep_all = TRUE) %>%
+  ungroup() %>%
+  mutate(tribe = factor(tribe),
+         time = factor(time),
+         oil_avg = oil_avg/1000,
+         gas_avg = gas_avg/1000,
+         pct_heat = h_100_hist/365) 
 
 data_t1and2_long <- filter(data_long, tribe %in% tribes_time1and2_lst$tribe)
 
@@ -34,6 +50,13 @@ heat.plot <- ggplot(data_t1and2_long, aes(time, h_100_hist, colour = time)) +
   scale_x_discrete(labels = c("time 1" = "Historical",
                               "time 2" = "Present-day")) +
   theme(legend.position = "none")
+
+# Heat Days Histogram (exploring)
+ggplot(data_t1and2_long, aes(x=log(h_100_hist), fill=time)) +
+  geom_histogram(position="dodge")
+
+ggplot(data_t1and2_long, aes(x=pct_heat, fill=time)) +
+  geom_histogram(position="dodge")
 
 # Wildfire Mean
 fire.mean.plot <- ggplot(data_t1and2_long, aes(time, fire_mean, colour = time)) +
